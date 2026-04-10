@@ -24,16 +24,16 @@ class CustomImageDataset(Dataset):
         self.transform = transform
         self.samples: List[Tuple[Path, int]] = []
 
-        self.class_to_idx = self._find_classes()
-        self._scan_files()
+        self.classes = self._store_class_info_in_dict()
+        self._add_samples()
 
-    def _find_classes(self) -> dict:
-        classes = sorted([d.name for d in self.root_dir.iterdir() if d.is_dir()])
+    def _store_class_info_in_dict(self) -> dict:
+        classes = sorted([sub_dir.name for sub_dir in self.root_dir.iterdir() if sub_dir.is_dir()])
         return {cls_name: idx for idx, cls_name in enumerate(classes)}
 
-    def _scan_files(self):
-        for cls_name, idx in self.class_to_idx.items():
-            class_dir = self.root_dir / cls_name
+    def _add_samples(self):
+        for cls_name, idx in self.classes.items():
+            class_dir = self.root_dir / cls_name #Use Path’s "/"" operator for joining two strings
             for img_path in class_dir.glob("*"):
                 if img_path.suffix.lower() in [".jpg", ".jpeg", ".png"]:
                     self.samples.append((img_path, idx))

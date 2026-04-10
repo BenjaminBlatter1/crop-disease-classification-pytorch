@@ -13,16 +13,16 @@ def main():
         transforms.ToTensor(),
     ])
 
-    train_ds = CustomImageDataset(Config.train_dir, transform=transform)
-    train_loader = DataLoader(
-        train_ds,
+    train_data_set = CustomImageDataset(Config.train_dir, transform=transform)
+    train_data_loader = DataLoader(
+        train_data_set,
         batch_size=Config.batch_size,
         shuffle=True,
         num_workers=Config.num_workers,
     )
 
     # Test one batch
-    for images, labels in train_loader:
+    for images, labels in train_data_loader:
         print("Batch loaded:")
         print("Images:", images.shape)
         print("Labels:", labels.shape)
