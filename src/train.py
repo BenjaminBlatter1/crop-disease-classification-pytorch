@@ -1,5 +1,6 @@
 import argparse
 import os
+
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -21,8 +22,25 @@ def red(text):
 # ---------------------------------------------------------
 # Utility: device selection
 # ---------------------------------------------------------
-def get_device():
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def get_best_device():
+    # NVIDIA GPU (CUDA)
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+
+    # Intel GPU (XPU)
+    if hasattr(torch, "xpu") and torch.xpu.is_available():
+        return torch.device("xpu")
+
+    # AMD GPU (ROCm)
+    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        return torch.device("mps")
+
+    # Apple Silicon (Metal)
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+
+    # CPU fallback
+    return torch.device("cpu")
 
 # ---------------------------------------------------------
 # Project structure validation
@@ -126,7 +144,7 @@ def test_model():
 def train_model():
     print("\n=== Training Pipeline ===")
 
-    device = get_device()
+    device = get_best_device()
     print(f"Using device: {device}")
 
     # Transforms
