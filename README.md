@@ -3,19 +3,20 @@
 ## Table of Contents
 - [Overview](#overview)
 - [Project Structure](#project-structure)
-- [Environment Setup](#environment-setup)
-- [Testing the Data Pipeline](#testing-the-data-pipeline)
+- [Virtual Environment Setup](#virtual-environment-setup)
+- [Kaggle CLI Setup](#kaggle-cli-setup)
+- [Pipeline Verification](#pipeline-verification)
 - [License](#license)
 
 ## Overview
 This project implements a clean, minimal, and fully reproducible machine‑learning pipeline for classifying tomato leaf diseases using the PlantVillage dataset.  
 The goal is to demonstrate professional ML engineering practices: clear structure, reproducible data preparation, modular code, and step‑by‑step pipeline validation.
 
-Specifially, the project includes:
- - PyTorch training pipeline
- - Data preprocessing and augmentation
- - Evaluation metrics (accuracy, F1)
- - ONNX export for deployment
+The project includes:
+- A PyTorch-based training pipeline
+- Dataset preprocessing and splitting
+- A simple CNN model for classification
+- Built‑in pipeline checks to ensure the setup is correct before training
 
 
 ## Project Structure
@@ -29,13 +30,15 @@ Specifially, the project includes:
 ├── scripts/
 │   └── split_tomato_dataset.sh   # Robust dataset preparation script
 ├── src/
-│   ├── train.py            # Training logic
-│   └── ...                 # Additional modules added over time
+│   ├── models/
+│       ├── convolutional_neural_network.py # Simple CNN model
+│   ├── train.py            # Pipeline verification
+│   └── ...
 ├── requirements.txt
 └── README.md
 ```
 
-## Environment Setup
+## Virtual Environment Setup
 
 Create and activate a virtual environment:
 
@@ -50,23 +53,22 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-## Kaggle CLI Setup (Legacy API Token Method)
+## Kaggle CLI Setup
 
 The current Kaggle CLI still requires the legacy authentication method.
 
 1. Go to: **https://www.kaggle.com/** and create an account (necessary for creating an API token and downloading the dataset)
 
-2. Go to: **https://www.kaggle.com/settings** and click:
-   **Create Legacy API Key**
-   This downloads a file named
-   ```kaggle.json```
-3. Move it to the correct location:
+2. Navigate to: **https://www.kaggle.com/settings**
+3. Under *API*, click **Create Legacy API Key**
+   This downloads a file named ```kaggle.json```
+4. Move it to the correct location:
    ```bash
    mkdir -p ~/.kaggle
    mv ~/<Download_Directory>/kaggle.json ~/.kaggle/
    chmod 600 ~/.kaggle/kaggle.json
    ```
-4. Test authentification:
+5. Test authentification:
    ```bash
    kaggle datasets list -s plant
    ```
@@ -95,7 +97,10 @@ rm data/raw/plantdisease.zip
 
 ## Prepare the Tomato Subset (train/val split)
 
+As of now, training the CNN will be limited on images of tomato leaves.
+
 This project includes a robust Bash script that:
+ - focusses solely on tomato leaf images
  - handles nested folder structures
  - handles filenames with spaces
  - handles ```.jpg```, ```.JPG```, ```.jpeg```, ```.JPEG```, ```.png```, etc.
@@ -116,32 +121,30 @@ data/processed/train/<class>/
 data/processed/val/<class>/
 ```
 
-## Testing the Data Pipeline
+## Pipeline Verification
 
-Before training any model, verify that the dataset and DataLoader work correctly.
+Before training, the project provides built‑in checks to ensure everything is correctly set up.
 
-Run:
+Run all checks:
 
 ```bash
 python src/train.py
 ```
 
-Expected output:
- - number of classes detected
- - example class names
- - a batch of images and labels
- - tensor shapes like:
+Or run a specific check:
 
-```
-Images: torch.Size([32, 3, 224, 224])
-Labels: torch.Size([32])
+```bash
+python src/train.py --test project_structure # Project structure check
+python src/train.py --test dataset           # Dataset & DataLoader check
+python src/train.py --test model             # Model forward-pass check
 ```
 
-This confirms:
- - dataset structure is correct
- - transforms work
- - DataLoader works
- - pipeline is ready for model training
+**What the checks validate**
+ - Project structure: Ensures required directories exist.
+ - Dataset & DataLoader: Confirms the processed dataset loads correctly and batches are valid.
+ - Model sanity check: Builds the CNN model and runs a forward pass to verify output shapes.
+
+These checks ensure the pipeline is stable and ready for training.
 
  ## License 
  This project is released under the MIT License, a permissive open‑source license that allows reuse, modification, and distribution with minimal restrictions.

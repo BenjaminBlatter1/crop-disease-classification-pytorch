@@ -2,5 +2,4 @@ __pycache__/
 .ipynb_checkpoints/ # Automatically created by Jupyter when notebook runs
 outputs/
 data/
-.env
-
+.crop-disease-venv/
