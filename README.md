@@ -1,5 +1,13 @@
 # Crop Disease Classification with PyTorch and Computer Vision
 
+## Table of Contents
+- [Overview](#overview)
+- [Project Structure](#project-structure)
+- [Environment Setup](#environment-setup)
+- [Testing the Data Pipeline](#testing-the-data-pipeline)
+- [License](#license)
+
+## Overview
 This project implements a clean, minimal, and fully reproducible machine‑learning pipeline for classifying tomato leaf diseases using the PlantVillage dataset.  
 The goal is to demonstrate professional ML engineering practices: clear structure, reproducible data preparation, modular code, and step‑by‑step pipeline validation.
 
@@ -10,9 +18,7 @@ Specifially, the project includes:
  - ONNX export for deployment
 
 
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── data/
@@ -29,9 +35,7 @@ Specifially, the project includes:
 └── README.md
 ```
 
----
-
-## 🔧 Environment Setup
+## Environment Setup
 
 Create and activate a virtual environment:
 
@@ -46,7 +50,7 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-## 🌐 Kaggle CLI Setup (Legacy API Token Method)
+## Kaggle CLI Setup (Legacy API Token Method)
 
 The current Kaggle CLI still requires the legacy authentication method.
 
@@ -68,7 +72,7 @@ The current Kaggle CLI still requires the legacy authentication method.
    ```
 If you see dataset results, authentication is working.
 
-## 📥 Download the PlantVillage Dataset
+## Download the PlantVillage Dataset
 
 Inside the project root:
 
@@ -89,7 +93,7 @@ Optionally, the zipped folder can now be deleted to avoid unnecesary memory allo
 rm data/raw/plantdisease.zip
 ```
 
-## 🍅 Prepare the Tomato Subset (train/val split)
+## Prepare the Tomato Subset (train/val split)
 
 This project includes a robust Bash script that:
  - handles nested folder structures
@@ -112,8 +116,7 @@ data/processed/train/<class>/
 data/processed/val/<class>/
 ```
 
-
-# 🧪 Testing the Data Pipeline
+## Testing the Data Pipeline
 
 Before training any model, verify that the dataset and DataLoader work correctly.
 
@@ -139,3 +142,6 @@ This confirms:
  - transforms work
  - DataLoader works
  - pipeline is ready for model training
+
+ ## License 
+ This project is released under the MIT License, a permissive open‑source license that allows reuse, modification, and distribution with minimal restrictions.
