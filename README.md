@@ -6,6 +6,7 @@
 - [Virtual Environment Setup](#virtual-environment-setup)
 - [Kaggle CLI Setup](#kaggle-cli-setup)
 - [Pipeline Verification](#pipeline-verification)
+- [Model Training](#model-training)
 - [License](#license)
 
 ## Overview
@@ -128,7 +129,7 @@ Before training, the project provides built‑in checks to ensure everything is 
 Run all checks:
 
 ```bash
-python src/train.py
+python src/train.py --test all
 ```
 
 Or run a specific check:
@@ -145,6 +146,14 @@ python src/train.py --test model             # Model forward-pass check
  - Model sanity check: Builds the CNN model and runs a forward pass to verify output shapes.
 
 These checks ensure the pipeline is stable and ready for training.
+
+## Training the Model
+
+Once the dataset and pipeline checks pass, you can start training the Convolutional Neural Network model:
+
+```bash
+python src/train.py --train
+```
 
  ## License 
  This project is released under the MIT License, a permissive open‑source license that allows reuse, modification, and distribution with minimal restrictions.
