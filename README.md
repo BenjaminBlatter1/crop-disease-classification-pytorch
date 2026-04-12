@@ -147,7 +147,7 @@ python src/train.py --test model             # Model forward-pass check
 
 These checks ensure the pipeline is stable and ready for training.
 
-## Training the Model
+## Model Training
 
 Once the dataset and pipeline checks pass, you can start training the Convolutional Neural Network model.
 
