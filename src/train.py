@@ -4,9 +4,10 @@ Training and diagnostic utilities for the tomato leaf disease classification pro
 This module provides:
 - project structure validation
 - dataset loading and inspection
-- model forward‑pass testing
+- model forward-pass testing
 - full training pipeline with device selection
-- command‑line interface for running tests or training
+- generation of training and validation metric plots (loss and accuracy)
+- command-line interface for running tests or training
 
 The module is designed to be executed as a script:
 
@@ -14,8 +15,7 @@ The module is designed to be executed as a script:
     python src/train.py --train
     python src/train.py --train --epochs <desired_number_of_epochs>
 
-It expects the dataset to be located under data/processed/ with the standard
-ImageFolder structure.
+It expects the dataset to be located under data/processed/ with the standard ImageFolder structure.
 """
 
 import argparse
@@ -217,7 +217,8 @@ def train_model(epochs) -> bool:
         - selects the best available compute device
         - trains the model using cross-entropy loss and Adam optimizer
         - evaluates on the validation set after each epoch
-        - prints loss and accuracy metrics
+        - records training/validation loss and accuracy metrics
+        - generates and saves training curves (loss and accuracy) to results/plots/
 
     Args:
         epochs (int): Number of full training epochs.
@@ -228,6 +229,11 @@ def train_model(epochs) -> bool:
     
     print("\n=== Training Pipeline ===")
 
+    list_of_training_accuracies = []
+    list_of_training_losses = []
+    list_of_validation_accuracies = []
+    list_of_validation_losses = []
+    
     device = get_best_device()
     print(f"Using device: {device}")
 
@@ -296,9 +302,17 @@ def train_model(epochs) -> bool:
 
         validation_accuracy = validation_correct / validation_total
         validation_loss /= validation_total
+        
+        list_of_training_accuracies.append(training_accuracy)
+        list_of_training_losses.append(training_loss)
+        list_of_validation_accuracies.append(validation_accuracy)
+        list_of_validation_losses.append(validation_loss)
 
         print(f"Training Loss: {training_loss:.4f} | Training Accuracy: {training_accuracy:.4f}")
         print(f"Validation Loss: {validation_loss:.4f} | Validation Accuracy: {validation_accuracy:.4f}")
+        
+    from visualization.plot_metrics import plot_training_curves
+    plot_training_curves(epochs, list_of_training_accuracies, list_of_training_losses, list_of_validation_accuracies, list_of_validation_losses)
 
     print(green("\nTraining complete."))
     return True
