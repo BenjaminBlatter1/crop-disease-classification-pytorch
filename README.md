@@ -149,10 +149,16 @@ These checks ensure the pipeline is stable and ready for training.
 
 ## Training the Model
 
-Once the dataset and pipeline checks pass, you can start training the Convolutional Neural Network model:
+Once the dataset and pipeline checks pass, you can start training the Convolutional Neural Network model.
 
+Train with default 5 epochs:
 ```bash
 python src/train.py --train
+```
+
+Train with a custom number of epochs:
+```bash
+python src/train.py --train --epochs <desired_number_of_epochs>
 ```
 
  ## License 
