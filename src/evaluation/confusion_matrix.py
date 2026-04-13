@@ -10,11 +10,11 @@ The confusion matrix helps identify which classes are frequently confused
 and provides per-class insight beyond overall accuracy.
 """
 
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import confusion_matrix
 from pathlib import Path
-import numpy as np
+from sklearn.metrics import confusion_matrix
 
 def plot_confusion_matrix(y_true, y_pred, class_names, save_path="results/confusion_matrix.png"):
     """
@@ -30,20 +30,27 @@ def plot_confusion_matrix(y_true, y_pred, class_names, save_path="results/confus
     and visualizes it as a heatmap. The plot is saved to the specified
     location, and the results directory is created if necessary.
     """
+
+    # Ensure results directory exists
     Path("results").mkdir(exist_ok=True)
 
+    # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
-    cm_norm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
+    # Normalize rows (true classes)
+    cm_normalized = cm.astype("float") / cm.sum(axis=1, keepdims=True)
+
+    # Plot
     plt.figure(figsize=(10, 8))
     sns.heatmap(
-        cm_norm,
+        cm_normalized,
         annot=True,
         fmt=".2f",
         cmap="Blues",
         xticklabels=class_names,
         yticklabels=class_names
     )
+
     plt.xlabel("Predicted")
     plt.ylabel("True")
     plt.title("Normalized Confusion Matrix")
