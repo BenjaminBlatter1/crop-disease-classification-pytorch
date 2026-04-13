@@ -1,5 +1,5 @@
 """
-Training and diagnostic utilities for the tomato leaf disease classification project.
+Training, inference, and diagnostic utilities for the tomato leaf disease classification project.
 
 This module provides:
 - project structure validation
@@ -7,13 +7,23 @@ This module provides:
 - model forward-pass testing
 - full training pipeline with device selection
 - generation of training and validation metric plots (loss and accuracy)
-- command-line interface for running tests or training
+- normalized confusion matrix computation
+- single-image inference using a trained model checkpoint
+- command-line interface for running tests, training, or inference
 
 The module is designed to be executed as a script:
 
+    # Run all diagnostic checks
     python src/train.py --test all
+
+    # Train the model (default: 5 epochs)
     python src/train.py --train
+
+    # Train with a custom number of epochs
     python src/train.py --train --epochs <desired_number_of_epochs>
+
+    # Run inference on a single image
+    python src/train.py --infer --image path/to/image.jpg
 
 It expects the dataset to be located under data/processed/ with the standard ImageFolder structure.
 """
@@ -26,6 +36,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 from models.convolutional_neural_network import SimpleCNN
+from inference import run_inference
 
 # ---------------------------------------------------------
 # Utility: Change color to green
@@ -367,20 +378,27 @@ def train_model(epochs) -> bool:
 # ---------------------------------------------------------
 def main():
     """
-    Command-line interface for running tests or training.
+    Command-line interface for running diagnostics, training, or single-image inference.
 
     Supported modes:
-        --test project_structure   Validate directory layout
-        --test dataset             Validate dataset loading
-        --test model               Validate model forward pass
-        --test all                 Run all tests
-        --train                    Run the training pipeline
-        --epochs N                 Override default epoch count (default: 5)
+        --test project_structure    Validate directory layout
+        --test dataset              Validate dataset loading
+        --test model                Validate model forward pass
+        --test all                  Run all diagnostic checks
+
+        --train                     Run the full training pipeline
+        --epochs N                  Override default epoch count (default: 5)
+
+        --infer                     Run inference on a single image
+        --image path/to/image.jpg   Image file used for inference (required with --infer)
 
     Behavior:
-        - If --train is provided, training is executed.
-        - If --train is provided without --epochs, training defaults to 5 epochs.
         - If --test is provided, the corresponding diagnostic is executed.
+        - If --train is provided, the training pipeline is executed.
+        - If --train is used without --epochs, training defaults to 5 epochs.
+        - If --infer is provided, a trained model checkpoint is loaded and used to
+          classify the image specified by --image.
+        - If --infer is used without --image, an error message is shown.
         - If no mode is selected, a help message is printed.
     """
     
@@ -391,12 +409,14 @@ def main():
         type=str, 
         default="None",
         choices=["project_structure", "dataset", "model", "all"],
-        help="Run a specific pipeline check or all together")
+        help="Run a specific pipeline check or all together."
+    )
     
     parser.add_argument(
         "--train", 
         action="store_true",
-        help="Run the full training pipeline")
+        help="Run the full training pipeline."
+    )
     
     parser.add_argument(
         "--epochs",
@@ -404,6 +424,20 @@ def main():
         default=5,
         help="Number of epochs to train for (default: 5)."
     )
+    
+    parser.add_argument(
+        "--inference",
+        action="store_true",
+        help="Run inference on a single image."
+    )
+
+    parser.add_argument(
+        "--image",
+        type=str,
+        default=None,
+        help="Path to an image for inference to be applied."
+    )
+    
     args = parser.parse_args()
 
     if args.test == "all":
@@ -418,8 +452,14 @@ def main():
         test_model()
     elif args.train:
         train_model(args.epochs)
+    elif args.inference:
+        if args.image is None:
+            print("Error: --inference requires --image <path/to/image>")
+            return
+        run_inference(args.image)
     else:
-        print("No mode selected. Use --test or --train.")
+        print("No mode selected. Use --test, --train, or --inference.")
+
 
 if __name__ == "__main__":
     main()

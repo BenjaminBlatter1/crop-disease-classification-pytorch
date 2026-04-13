@@ -23,7 +23,6 @@ The project includes:
 
 
 ## Project Structure
-
 ├── data/
 │   ├── raw/         # Downloaded dataset
 │   └── processed/
@@ -54,7 +53,6 @@ The project includes:
 └── requirements.txt
 
 ## Virtual Environment Setup
-
 Create and activate a virtual environment:
 
 ```bash
@@ -69,7 +67,6 @@ pip install -r requirements.txt
 ```
 
 ## Kaggle CLI Setup
-
 The current Kaggle CLI still requires the legacy authentication method.
 
 1. Go to: **https://www.kaggle.com/** and create an account (necessary for creating an API token and downloading the dataset)
@@ -90,7 +87,6 @@ The current Kaggle CLI still requires the legacy authentication method.
 If you see dataset results, authentication is working.
 
 ## Download the PlantVillage Dataset
-
 Inside the project root:
 
 ```bash
@@ -111,7 +107,6 @@ rm data/raw/plantdisease.zip
 ```
 
 ## Prepare the Tomato Subset (train/val split)
-
 As of now, training the CNN will be limited on images of tomato leaves.
 
 This project includes a robust Bash script that:
@@ -137,7 +132,6 @@ data/processed/val/<class>/
 ```
 
 ## Pipeline Verification
-
 Before training, the project provides built‑in checks to ensure everything is correctly set up.
 
 Run all checks:
@@ -162,7 +156,6 @@ python src/train.py --test model             # Model forward-pass check
 These checks ensure the pipeline is stable and ready for training.
 
 ## Model Training
-
 Once the dataset and pipeline checks pass, you can start training the Convolutional Neural Network model.
 
 Train with default 5 epochs:
@@ -174,6 +167,15 @@ Train with a custom number of epochs:
 ```bash
 python src/train.py --train --epochs <desired_number_of_epochs>
 ```
+
+### Single‑Image Inference
+After training, you can run inference on any tomato leaf image:
+
+```bash
+python src/train.py --infer --image <path_to_desired_image>
+```
+
+This loads the saved model checkpoint from results/model_checkpoint.pth and prints the predicted class.
 
 ## Results
 After training the SimpleCNN model, the following evaluation artifacts are generated under ```results/plots/```:
