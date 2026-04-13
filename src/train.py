@@ -219,6 +219,7 @@ def train_model(epochs) -> bool:
         - evaluates on the validation set after each epoch
         - records training/validation loss and accuracy metrics
         - generates and saves training curves (loss and accuracy) to results/plots/
+        - computes and saves a normalized confusion matrix and per-class accuracy metrics
 
     Args:
         epochs (int): Number of full training epochs.
@@ -226,14 +227,14 @@ def train_model(epochs) -> bool:
     Returns:
         bool: True when training completes successfully.
     """
-    
+
     print("\n=== Training Pipeline ===")
 
     list_of_training_accuracies = []
     list_of_training_losses = []
     list_of_validation_accuracies = []
     list_of_validation_losses = []
-    
+
     device = get_best_device()
     print(f"Using device: {device}")
 
@@ -261,48 +262,70 @@ def train_model(epochs) -> bool:
 
         # Training
         model.train()
-        training_loss = 0
-        correct = 0
-        total = 0
+        training_loss = 0.0
+        training_correct = 0
+        training_total = 0
 
         for images, labels in training_loader:
             images, labels = images.to(device), labels.to(device)
 
             optimizer.zero_grad()
+
+            # 1. Forward pass
             outputs = model(images)
+
+            # 2. Compute loss
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
             training_loss += loss.item() * images.size(0)
-            _, preds = outputs.max(1)
-            correct += preds.eq(labels).sum().item()
-            total += labels.size(0)
 
-        training_accuracy = correct / total
-        training_loss /= total
+            # 3. Compute predictions
+            _, predictions_from_training = outputs.max(1)
+
+            # 4. Accumulate accuracy
+            training_correct += predictions_from_training.eq(labels).sum().item()
+            training_total += labels.size(0)
+
+        training_accuracy = training_correct / training_total
+        training_loss /= training_total
 
         # Validation
         model.eval()
-        validation_loss = 0
+        validation_loss = 0.0
         validation_correct = 0
         validation_total = 0
+
+        # Reset lists so confusion matrix is based on the final epoch only
+        all_predictions_from_validation = []
+        all_labels_from_validation = []
 
         with torch.no_grad():
             for images, labels in validation_loader:
                 images, labels = images.to(device), labels.to(device)
 
+                # 1. Forward pass
                 outputs = model(images)
-                loss = criterion(outputs, labels)
 
+                # 2. Compute loss
+                loss = criterion(outputs, labels)
                 validation_loss += loss.item() * images.size(0)
-                _, preds = outputs.max(1)
-                validation_correct += preds.eq(labels).sum().item()
+
+                # 3. Compute predictions
+                _, predictions_from_validation = outputs.max(1)
+
+                # 4. Accumulate accuracy
+                validation_correct += predictions_from_validation.eq(labels).sum().item()
                 validation_total += labels.size(0)
+
+                # 5. Store predictions for confusion matrix
+                all_predictions_from_validation.extend(predictions_from_validation.cpu().numpy())
+                all_labels_from_validation.extend(labels.cpu().numpy())
 
         validation_accuracy = validation_correct / validation_total
         validation_loss /= validation_total
-        
+
         list_of_training_accuracies.append(training_accuracy)
         list_of_training_losses.append(training_loss)
         list_of_validation_accuracies.append(validation_accuracy)
@@ -310,9 +333,21 @@ def train_model(epochs) -> bool:
 
         print(f"Training Loss: {training_loss:.4f} | Training Accuracy: {training_accuracy:.4f}")
         print(f"Validation Loss: {validation_loss:.4f} | Validation Accuracy: {validation_accuracy:.4f}")
-        
+
+    # Plot curves
     from visualization.plot_metrics import plot_training_curves
-    plot_training_curves(epochs, list_of_training_accuracies, list_of_training_losses, list_of_validation_accuracies, list_of_validation_losses)
+    plot_training_curves(
+        epochs,
+        list_of_training_accuracies,
+        list_of_training_losses,
+        list_of_validation_accuracies,
+        list_of_validation_losses
+    )
+
+    # Confusion matrix
+    from evaluation.confusion_matrix import plot_confusion_matrix
+    class_names = training_dataset.classes
+    plot_confusion_matrix(all_labels_from_validation, all_predictions_from_validation, class_names)
 
     print(green("\nTraining complete."))
     return True
