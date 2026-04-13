@@ -5,8 +5,12 @@
 - [Project Structure](#project-structure)
 - [Virtual Environment Setup](#virtual-environment-setup)
 - [Kaggle CLI Setup](#kaggle-cli-setup)
+- [Download the PlantVillage Dataset](#download-the-plantvillage-dataset)
+- [Prepare the Tomato Subset (train/val split)](#prepare-the-tomato-subset-trainval-split)
 - [Pipeline Verification](#pipeline-verification)
 - [Model Training](#model-training)
+  - [Training Output and Logging](#training-output-and-logging)
+  - [Single‑Image Inference](#single-image-inference)
 - [Results](#results)
 - [Future Work](#future-work)
 - [License](#license)
@@ -168,11 +172,21 @@ Train with a custom number of epochs:
 python src/train.py --train --epochs <desired_number_of_epochs>
 ```
 
-### Single‑Image Inference
+### Training Output and Logging
+During training, the script displays live progress bars for both training and validation epochs.
+All training information (loss, accuracy, epoch summaries) is also written to:
+
+```
+results/training.log
+```
+
+This makes the training process transparent and easy to debug.
+
+### Single Image Inference
 After training, you can run inference on any tomato leaf image:
 
 ```bash
-python src/train.py --infer --image <path_to_desired_image>
+python src/train.py --infer --image <path_to_image>
 ```
 
 This loads the saved model checkpoint from results/model_checkpoint.pth and prints the predicted class.
@@ -186,9 +200,9 @@ After training the SimpleCNN model, the following evaluation artifacts are gener
 These plots summarize the model’s learning behavior and highlight class‑specific performance.
 The confusion matrix in particular shows which tomato diseases are most frequently confused by the model.
 
-Final metrics after **5 training epochs**:
- - **Training Accuracy**: 93.6%
- - **Validation Accuracy**: 91.8%
+Final metrics after **20 training epochs**:
+ - **Training Accuracy**: 98.47%
+ - **Validation Accuracy**: 92.75%
 
 ## Future Work
 

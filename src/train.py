@@ -23,7 +23,7 @@ The module is designed to be executed as a script:
     python src/train.py --train --epochs <desired_number_of_epochs>
 
     # Run inference on a single image
-    python src/train.py --infer --image path/to/image.jpg
+    python src/train.py --infer --image <path_to_image>
 
 It expects the dataset to be located under data/processed/ with the standard ImageFolder structure.
 """
@@ -38,17 +38,21 @@ from torchvision import datasets, transforms
 from models.convolutional_neural_network import SimpleCNN
 from inference import run_inference
 
-# ---------------------------------------------------------
-# Utility: Change color to green
-# ---------------------------------------------------------
-def green(text) -> str:
-    return f"\033[32m{text}\033[0m"
+import logging
+from tqdm import tqdm
 
 # ---------------------------------------------------------
-# Utility: Change color to red
+# Logging configuration
 # ---------------------------------------------------------
-def red(text) -> str:
-    return f"\033[91m{text}\033[0m"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    handlers=[
+        logging.FileHandler("results/training.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------
 # Utility: device selection
@@ -99,7 +103,7 @@ def test_project_structure() -> bool:
         bool: True if all required directories exist, False otherwise.
     """
     
-    print("\n=== Project Structure Test ===")
+    logger.info("\n=== Project Structure Test ===")
 
     required_dirs = [
         "data/raw",
@@ -111,12 +115,12 @@ def test_project_structure() -> bool:
     missing = [d for d in required_dirs if not os.path.exists(d)]
 
     if missing:
-        print(red("\nMissing required directories:"))
+        logger.error("Missing required directories:")
         for m in missing:
-            print("   -", m)
+            logger.error(f"   - {m}")
         return False
 
-    print(green("\nProject structure looks good."))
+    logger.info("Project structure looks good.")
     return True
 
 # ---------------------------------------------------------
@@ -136,12 +140,12 @@ def test_dataset() -> bool:
         bool: True if dataset loading and batching succeed, False otherwise.
     """
     
-    print("\n=== DataLoader Test ===")
+    logger.info("\n=== DataLoader Test ===")
 
     data_dir = "data/processed/train"
 
     if not os.path.exists(data_dir):
-        print(red("\nProcessed dataset not found. Run split_tomato_dataset.sh first."))
+        logger.error("Processed dataset not found. Run split_tomato_dataset.sh first.")
         return False
 
     transform = transforms.Compose([
@@ -152,16 +156,15 @@ def test_dataset() -> bool:
     dataset = datasets.ImageFolder(data_dir, transform=transform)
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
-    print(f"Found {len(dataset.classes)} classes:")
-    print(dataset.classes)
+    logger.info(f"Found {len(dataset.classes)} classes: {dataset.classes}")
 
     images, labels = next(iter(loader))
 
-    print("Batch loaded successfully.")
-    print("Images:", images.shape)
-    print("Labels:", labels.shape)
+    logger.info("Batch loaded successfully.")
+    logger.info("Images:", images.shape)
+    logger.info("Labels:", labels.shape)
 
-    print(green("\nDataset test looks good."))
+    logger.info("Dataset test looks good.")
 
     return True
 
@@ -183,7 +186,7 @@ def test_model() -> bool:
         bool: True if the forward pass succeeds, False otherwise.
     """
     
-    print("\n=== Model Forward Pass Test ===")
+    logger.info("\n=== Model Forward Pass Test ===")
 
     data_dir = "data/processed/train"
 
@@ -198,20 +201,19 @@ def test_model() -> bool:
     images, labels = next(iter(loader))
     num_classes = len(dataset.classes)
 
-    print(f"Using {num_classes} classes.")
+    logger.info(f"Using {num_classes} classes.")
 
     # Initialize your CNN
     model = SimpleCNN(num_classes)
 
-    print("\nModel architecture:")
-    print(model)
-
-    print("\nInput batch shape:", images.shape)
+    logger.info(f"Model architecture: {model}")
+    logger.info(f"Input batch shape: {images.shape}")
+    
     outputs = model(images)
-    print("Output batch shape:", outputs.shape)
+    logger.info(f"Output batch shape: {outputs.shape}")
 
     assert outputs.shape == (images.size(0), num_classes)
-    print(green("\nForward pass successful."))
+    logger.info("Forward pass successful.")
 
     return True
 
@@ -239,7 +241,7 @@ def train_model(epochs) -> bool:
         bool: True when training completes successfully.
     """
 
-    print("\n=== Training Pipeline ===")
+    logger.info("\n=== Training Pipeline ===")
 
     list_of_training_accuracies = []
     list_of_training_losses = []
@@ -247,7 +249,7 @@ def train_model(epochs) -> bool:
     list_of_validation_losses = []
 
     device = get_best_device()
-    print(f"Using device: {device}")
+    logger.info(f"Using device: {device}")
 
     # Transforms
     transform = transforms.Compose([
@@ -269,7 +271,7 @@ def train_model(epochs) -> bool:
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     for epoch in range(1, epochs + 1):
-        print(f"\n--- Epoch {epoch}/{epochs} ---")
+        logger.info(f"--- Epoch {epoch}/{epochs} ---")
 
         # Training
         model.train()
@@ -277,7 +279,7 @@ def train_model(epochs) -> bool:
         training_correct = 0
         training_total = 0
 
-        for images, labels in training_loader:
+        for images, labels in tqdm(training_loader, desc=f"Training Epoch {epoch}", leave=False):
             images, labels = images.to(device), labels.to(device)
 
             optimizer.zero_grad()
@@ -313,7 +315,7 @@ def train_model(epochs) -> bool:
         all_labels_from_validation = []
 
         with torch.no_grad():
-            for images, labels in validation_loader:
+            for images, labels in tqdm(validation_loader, desc=f"Validation Epoch {epoch}", leave=False):
                 images, labels = images.to(device), labels.to(device)
 
                 # 1. Forward pass
@@ -342,8 +344,8 @@ def train_model(epochs) -> bool:
         list_of_validation_accuracies.append(validation_accuracy)
         list_of_validation_losses.append(validation_loss)
 
-        print(f"Training Loss: {training_loss:.4f} | Training Accuracy: {training_accuracy:.4f}")
-        print(f"Validation Loss: {validation_loss:.4f} | Validation Accuracy: {validation_accuracy:.4f}")
+        logger.info(f"Training Loss: {training_loss:.4f} | Training Accuracy: {training_accuracy:.4f}")
+        logger.info(f"Validation Loss: {validation_loss:.4f} | Validation Accuracy: {validation_accuracy:.4f}")
 
     # Plot curves
     from visualization.plot_metrics import plot_training_curves
@@ -365,12 +367,13 @@ def train_model(epochs) -> bool:
     
     # Save training meta data
     with open("results/training_metadata.txt", "w") as training_metadata:
-        training_metadata.write(f"epochs={epochs}\n")
-        training_metadata.write(f"final_training_accuracy={training_accuracy}\n")
-        training_metadata.write(f"final_validation_accuracy={validation_accuracy}\n")
+        training_metadata.write(f"Total number of epochs: {epochs}\n")
+        training_metadata.write(f"Final training accuracy: {training_accuracy}\n")
+        training_metadata.write(f"Final training loss: {training_loss}\n")
+        training_metadata.write(f"Final validation accuracy: {validation_accuracy}\n")
+        training_metadata.write(f"Final validation loss: {validation_loss}\n")
 
-
-    print(green("\nTraining complete."))
+    logger.info("Training complete.")
     return True
 
 # ---------------------------------------------------------
@@ -389,42 +392,42 @@ def main():
         --train                     Run the full training pipeline
         --epochs N                  Override default epoch count (default: 5)
 
-        --infer                     Run inference on a single image
-        --image path/to/image.jpg   Image file used for inference (required with --infer)
+        --inference                 Run inference on a single image
+        --image <path_to_image>     Image file used for inference (required with --inference)
 
     Behavior:
         - If --test is provided, the corresponding diagnostic is executed.
         - If --train is provided, the training pipeline is executed.
         - If --train is used without --epochs, training defaults to 5 epochs.
-        - If --infer is provided, a trained model checkpoint is loaded and used to
+        - If --inference is provided, a trained model checkpoint is loaded and used to
           classify the image specified by --image.
-        - If --infer is used without --image, an error message is shown.
+        - If --inference is used without --image, an error message is shown.
         - If no mode is selected, a help message is printed.
     """
-    
+
     parser = argparse.ArgumentParser()
-    
+
     parser.add_argument(
-        "--test", 
-        type=str, 
+        "--test",
+        type=str,
         default="None",
         choices=["project_structure", "dataset", "model", "all"],
         help="Run a specific pipeline check or all together."
     )
-    
+
     parser.add_argument(
-        "--train", 
+        "--train",
         action="store_true",
         help="Run the full training pipeline."
     )
-    
+
     parser.add_argument(
         "--epochs",
         type=int,
         default=5,
         help="Number of epochs to train for (default: 5)."
     )
-    
+
     parser.add_argument(
         "--inference",
         action="store_true",
@@ -437,7 +440,7 @@ def main():
         default=None,
         help="Path to an image for inference to be applied."
     )
-    
+
     args = parser.parse_args()
 
     if args.test == "all":
@@ -454,12 +457,11 @@ def main():
         train_model(args.epochs)
     elif args.inference:
         if args.image is None:
-            print("Error: --inference requires --image <path/to/image>")
+            logger.error("Error: --inference requires --image <path_to_image>")
             return
         run_inference(args.image)
     else:
-        print("No mode selected. Use --test, --train, or --inference.")
-
+        logger.info("No mode selected. Use --test, --train, or --inference.")
 
 if __name__ == "__main__":
     main()
