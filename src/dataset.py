@@ -1,3 +1,13 @@
+"""
+Custom dataset utilities for loading image data for classification.
+
+This module defines a lightweight dataset class compatible with PyTorch's
+DataLoader. It expects a directory structure where each subdirectory represents
+a class and contains the corresponding images. The dataset automatically assigns
+integer labels based on alphabetical class ordering and supports optional
+transform pipelines.
+"""
+
 import os
 from pathlib import Path
 from typing import Callable, Optional, List, Tuple
@@ -8,8 +18,9 @@ from torch.utils.data import Dataset
 
 class CustomImageDataset(Dataset):
     """
-    Expects a directory structure like:
+    Dataset for loading images from a directory structured by class folders.
 
+    Expected directory layout:
         root/
             class_0/
                 img1.jpg
@@ -17,6 +28,22 @@ class CustomImageDataset(Dataset):
             class_1/
                 img3.jpg
                 img4.jpg
+
+    The dataset:
+        - assigns class indices based on alphabetical folder order
+        - collects all valid image files recursively
+        - applies an optional transform to each image
+
+    Args:
+        root_dir (str): Path to the dataset root directory.
+        transform (Callable, optional): Optional preprocessing transform applied
+            to each loaded image.
+
+    Attributes:
+        root_dir (Path): Normalized dataset root path.
+        transform (Callable | None): Transform applied to each image.
+        samples (list[tuple[Path, int]]): List of (image_path, class_index) pairs.
+        classes (dict[str, int]): Mapping from class name to integer label.
     """
 
     def __init__(self, root_dir: str, transform: Optional[Callable] = None):
@@ -28,10 +55,21 @@ class CustomImageDataset(Dataset):
         self._add_samples()
 
     def _store_class_info_in_dict(self) -> dict:
+        """
+        Scan the dataset directory and assign integer labels to each class.
+
+        Returns:
+            dict[str, int]: Mapping from class names to integer indices.
+        """
         classes = sorted([sub_dir.name for sub_dir in self.root_dir.iterdir() if sub_dir.is_dir()])
         return {cls_name: idx for idx, cls_name in enumerate(classes)}
 
     def _add_samples(self):
+        """
+        Populate the internal sample list with all valid image paths.
+
+        Only files with extensions .jpg, .jpeg, or .png are included.
+        """
         for cls_name, idx in self.classes.items():
             class_dir = self.root_dir / cls_name #Use Path’s "/"" operator for joining two strings
             for img_path in class_dir.glob("*"):
@@ -42,6 +80,15 @@ class CustomImageDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx):
+        """
+        Load and return a single sample from the dataset.
+
+        Args:
+            idx (int): Index of the sample to retrieve.
+
+        Returns:
+            tuple: (image_tensor, label_index)
+        """
         img_path, label = self.samples[idx]
         image = Image.open(img_path).convert("RGB")
 

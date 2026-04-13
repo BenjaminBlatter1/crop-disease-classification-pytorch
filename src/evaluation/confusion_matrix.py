@@ -16,7 +16,7 @@ import seaborn as sns
 from pathlib import Path
 from sklearn.metrics import confusion_matrix
 
-def plot_confusion_matrix(y_true, y_pred, class_names, save_path="results/confusion_matrix.png"):
+def plot_confusion_matrix(y_true, y_pred, class_names, save_path="results/plots/confusion_matrix.png"):
     """
     Generate and save a normalized confusion matrix plot.
 

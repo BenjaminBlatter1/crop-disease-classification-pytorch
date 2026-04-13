@@ -7,6 +7,8 @@
 - [Kaggle CLI Setup](#kaggle-cli-setup)
 - [Pipeline Verification](#pipeline-verification)
 - [Model Training](#model-training)
+- [Results](#results)
+- [Future Work](#future-work)
 - [License](#license)
 
 ## Overview
@@ -22,22 +24,34 @@ The project includes:
 
 ## Project Structure
 
-```
 ├── data/
-│   ├── raw/                # Downloaded dataset (extracted)
+│   ├── raw/         # Downloaded dataset
 │   └── processed/
-│       └── train           # Training data
-│       └── val             # Validation data
+│       ├── train/   # Training split
+│       └── val/     # Validation split
+│
+├── results/
+│   ├── plots/                # Accuracy/loss curves + confusion matrix
+│   └── model_checkpoint.pth  # Saved model weights (after training)
+│
 ├── scripts/
-│   └── split_tomato_dataset.sh   # Robust dataset preparation script
+│   └── split_tomato_dataset.sh  # Tomato-only dataset preparation
+│
 ├── src/
+│   ├── evaluation/
+│   │   └── confusion_matrix.py              # Normalized confusion matrix generation
 │   ├── models/
-│       ├── convolutional_neural_network.py # Simple CNN model
-│   ├── train.py            # Pipeline verification
-│   └── ...
-├── requirements.txt
-└── README.md
-```
+│   │   └── convolutional_neural_network.py  # Simple CNN model
+│   ├── visualization/
+│   │   └── plot_metrics.py                  # Accuracy/loss curve plotting
+│   ├── config.py                            # Centralized configuration settings
+│   ├── dataset.py                           # Custom dataset loader
+│   ├── inference.py                         # Single-image inference script
+│   ├── model.py                             # ResNet‑18 model factory
+│   └── train.py                             # Full training pipeline + tests
+│
+├── README.md
+└── requirements.txt
 
 ## Virtual Environment Setup
 
@@ -161,5 +175,28 @@ Train with a custom number of epochs:
 python src/train.py --train --epochs <desired_number_of_epochs>
 ```
 
- ## License 
- This project is released under the MIT License, a permissive open‑source license that allows reuse, modification, and distribution with minimal restrictions.
+## Results
+After training the SimpleCNN model, the following evaluation artifacts are generated under ```results/plots/```:
+ - **Training vs. Validation Accuracy Curve**
+ - **Training vs. Validation Loss Curve**
+ - **Normalized Confusion Matrix**
+
+These plots summarize the model’s learning behavior and highlight class‑specific performance.
+The confusion matrix in particular shows which tomato diseases are most frequently confused by the model.
+
+Final metrics after **5 training epochs**:
+ - **Training Accuracy**: 93.6%
+ - **Validation Accuracy**: 91.8%
+
+## Future Work
+
+Several improvements can further enhance model performance and robustness:
+ - Data augmentation (random flips, rotations, color jitter)
+ - Transfer learning using pretrained CNN backbones
+ - Hyperparameter tuning (learning rate, batch size, optimizer)
+ - Larger or deeper model architectures
+ - Test‑set evaluation and cross‑validation
+ - Exporting the model for mobile or edge deployment
+
+## License 
+This project is released under the MIT License, a permissive open‑source license that allows reuse, modification, and distribution with minimal restrictions.

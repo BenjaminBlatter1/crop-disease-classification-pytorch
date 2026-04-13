@@ -7,7 +7,7 @@ for RGB images resized to 224x224 pixels and produces class logits suitable for
 multi-class classification using cross-entropy loss.
 
 The model follows a common design pattern:
-- 3×3 convolutions with padding to preserve spatial dimensions
+- 3x3 convolutions with padding to preserve spatial dimensions
 - doubling the number of channels in deeper layers
 - max-pooling to progressively reduce spatial resolution
 - a fully connected head operating on flattened feature maps
