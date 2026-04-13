@@ -24,6 +24,10 @@ class Config:
 
         image_size (tuple[int, int]): Target spatial resolution for input images.
         device (str): Compute device identifier ("cuda", "cpu", etc.).
+        
+        use_augmentation (bool): Enables optional data augmentation during
+        training. When True, the training transform pipeline applies random
+        flips, rotations, and color jitter to improve model robustness.
     """
 
     # Data
@@ -41,3 +45,6 @@ class Config:
     # Model
     image_size = (224, 224)
     device = "cuda"
+    
+    #Misc
+    use_augmentation = False

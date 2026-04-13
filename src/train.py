@@ -1,15 +1,20 @@
 """
-Training, inference, and diagnostic utilities for the tomato leaf disease classification project.
+Training, inference, and diagnostic utilities for the tomato leaf disease
+classification project.
 
 This module provides:
 - project structure validation
 - dataset loading and inspection
 - model forward-pass testing
 - full training pipeline with device selection
+- optional data augmentation during training
 - generation of training and validation metric plots (loss and accuracy)
 - normalized confusion matrix computation
 - single-image inference using a trained model checkpoint
 - command-line interface for running tests, training, or inference
+
+Augmentation is controlled via Config.use_augmentation or the --augment flag.
+Validation transforms remain deterministic to ensure consistent evaluation.
 
 The module is designed to be executed as a script:
 
@@ -18,6 +23,9 @@ The module is designed to be executed as a script:
 
     # Train the model (default: 5 epochs)
     python src/train.py --train
+
+    # Train with augmentation enabled explicitly
+    python src/train.py --train --augment
 
     # Train with a custom number of epochs
     python src/train.py --train --epochs <desired_number_of_epochs>
@@ -35,8 +43,9 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-from models.convolutional_neural_network import SimpleCNN
+from config import Config
 from inference import run_inference
+from models.convolutional_neural_network import SimpleCNN
 
 import logging
 from tqdm import tqdm
@@ -85,6 +94,42 @@ def get_best_device() -> torch.device:
         return torch.device("mps")
 
     return torch.device("cpu")
+
+def get_transforms() -> tuple[transforms.Compose, transforms.Compose]:
+    """
+    Create training and validation transform pipelines.
+
+    When Config.use_augmentation is True, the training pipeline applies light
+    augmentation (horizontal flips, small rotations, color jitter). Validation
+    transforms remain deterministic to ensure consistent evaluation.
+
+    Returns:
+        tuple: (training_transform, validation_transform)
+    """
+    if Config.use_augmentation:
+        training_transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomRotation(15),
+            transforms.ColorJitter(
+                brightness=0.2,
+                contrast=0.2,
+                saturation=0.2
+            ),
+            transforms.ToTensor(),
+        ])
+    else:
+        training_transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+        ])
+
+    validation_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+    ])
+
+    return training_transform, validation_transform
 
 # ---------------------------------------------------------
 # Project structure validation
@@ -148,10 +193,7 @@ def test_dataset() -> bool:
         logger.error("Processed dataset not found. Run split_tomato_dataset.sh first.")
         return False
 
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-    ])
+    _, transform = get_transforms()
 
     dataset = datasets.ImageFolder(data_dir, transform=transform)
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
@@ -190,10 +232,7 @@ def test_model() -> bool:
 
     data_dir = "data/processed/train"
 
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-    ])
+    _, transform = get_transforms()
 
     dataset = datasets.ImageFolder(data_dir, transform=transform)
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
@@ -226,7 +265,8 @@ def train_model(epochs) -> bool:
 
     The function:
         - loads training and validation datasets
-        - applies preprocessing transforms
+        - applies preprocessing transforms, including optional data augmentation when 
+          Config.use_augmentation is enabled
         - selects the best available compute device
         - trains the model using cross-entropy loss and Adam optimizer
         - evaluates on the validation set after each epoch
@@ -251,15 +291,12 @@ def train_model(epochs) -> bool:
     device = get_best_device()
     logger.info(f"Using device: {device}")
 
-    # Transforms
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-    ])
+    # Load transforms (with or without augmentation)
+    training_transform, validation_transform = get_transforms()
 
     # Datasets
-    training_dataset = datasets.ImageFolder("data/processed/train", transform=transform)
-    validation_dataset = datasets.ImageFolder("data/processed/val", transform=transform)
+    training_dataset = datasets.ImageFolder("data/processed/train", transform=training_transform)
+    validation_dataset = datasets.ImageFolder("data/processed/val", transform=validation_transform)
 
     training_loader = DataLoader(training_dataset, batch_size=32, shuffle=True)
     validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False)
@@ -391,6 +428,7 @@ def main():
 
         --train                     Run the full training pipeline
         --epochs N                  Override default epoch count (default: 5)
+        --augment                   Enable data augmentation during training
 
         --inference                 Run inference on a single image
         --image <path_to_image>     Image file used for inference (required with --inference)
@@ -398,6 +436,7 @@ def main():
     Behavior:
         - If --test is provided, the corresponding diagnostic is executed.
         - If --train is provided, the training pipeline is executed.
+        - If --augment is provided, the training pipeline uses augmented transforms.
         - If --train is used without --epochs, training defaults to 5 epochs.
         - If --inference is provided, a trained model checkpoint is loaded and used to
           classify the image specified by --image.
@@ -427,6 +466,12 @@ def main():
         default=5,
         help="Number of epochs to train for (default: 5)."
     )
+    
+    parser.add_argument(
+        "--augment",
+        action="store_true",
+        help="Enable data augmentation during training."
+    )
 
     parser.add_argument(
         "--inference",
@@ -442,6 +487,9 @@ def main():
     )
 
     args = parser.parse_args()
+    
+    # Apply augmentation flag
+    Config.use_augmentation = args.augment
 
     if args.test == "all":
         test_project_structure()

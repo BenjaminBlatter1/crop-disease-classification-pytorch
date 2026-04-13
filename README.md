@@ -9,6 +9,11 @@
 - [Prepare the Tomato Subset (train/val split)](#prepare-the-tomato-subset-trainval-split)
 - [Pipeline Verification](#pipeline-verification)
 - [Model Training](#model-training)
+  - [Data Augmentation](#data-augmentation)
+    - [What augmentation is applied?](#what-augmentation-is-applied)
+    - [Why is validation not augmented?](#why-is-validation-not-augmented)
+    - [How to switch augmentation mode?](#how-to-switch-augmentation-mode)
+    - [Transform pipeline](#transform-pipeline)
   - [Training Output and Logging](#training-output-and-logging)
   - [Single‑Image Inference](#single-image-inference)
 - [Results](#results)
@@ -172,6 +177,44 @@ Train with a custom number of epochs:
 python src/train.py --train --epochs <desired_number_of_epochs>
 ```
 
+### Data Augmentation
+Data augmentation improves the model’s robustness by simulating natural variation in real tomato leaf images. Agricultural imagery often varies in lighting, orientation, and color, and augmentation helps the model generalize better to these conditions.
+
+#### What augmentation is applied?
+The training pipeline applies light, biologically plausible transformations:
+ - random horizontal flips
+ - small rotations (±15°)
+ - mild color jitter (brightness, contrast, saturation)
+
+These augmentations increase dataset diversity without distorting the underlying leaf structure.
+
+#### Why is validation not augmented?
+Validation images remain clean and deterministic. This ensures that validation accuracy reflects true model performance rather than random augmentation noise. Augmenting validation data would make metrics unstable and non‑comparable across runs.
+
+#### How to switch augmentation mode?
+Augmentation is controlled through the global configuration:
+
+```python
+Config.use_augmentation = False
+```
+
+or via the command‑line interface:
+
+```bash
+python src/train.py --train --augment
+```
+
+If ```--augment``` is omitted, augmentation defaults to the value defined in Config.
+
+#### Transform pipeline
+The training script constructs the transform pipelines dynamically:
+
+```python
+train_transform, val_transform = get_transforms()
+```
+
+```get_transforms()``` returns a tuple of two ```torchvision.transforms.Compose``` objects: one for training (augmented or clean) and one for validation (always clean).
+
 ### Training Output and Logging
 During training, the script displays live progress bars for both training and validation epochs.
 All training information (loss, accuracy, epoch summaries) is also written to:
@@ -205,9 +248,7 @@ Final metrics after **20 training epochs**:
  - **Validation Accuracy**: 92.75%
 
 ## Future Work
-
 Several improvements can further enhance model performance and robustness:
- - Data augmentation (random flips, rotations, color jitter)
  - Transfer learning using pretrained CNN backbones
  - Hyperparameter tuning (learning rate, batch size, optimizer)
  - Larger or deeper model architectures

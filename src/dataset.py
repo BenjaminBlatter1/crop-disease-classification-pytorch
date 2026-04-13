@@ -6,9 +6,14 @@ DataLoader. It expects a directory structure where each subdirectory represents
 a class and contains the corresponding images. The dataset automatically assigns
 integer labels based on alphabetical class ordering and supports optional
 transform pipelines.
+
+The dataset is designed to work with configurable transform pipelines, including
+optional data augmentation applied during training. Augmentation is not handled
+inside the dataset itself but is passed in through the `transform` argument.
+Typical augmentations include random flips, rotations, and color jitter, while
+validation transforms remain deterministic to ensure consistent evaluation.
 """
 
-import os
 from pathlib import Path
 from typing import Callable, Optional, List, Tuple
 
@@ -32,12 +37,14 @@ class CustomImageDataset(Dataset):
     The dataset:
         - assigns class indices based on alphabetical folder order
         - collects all valid image files recursively
-        - applies an optional transform to each image
+        - applies an optional transform to each image (including augmentation
+          when enabled in the training pipeline)
 
     Args:
         root_dir (str): Path to the dataset root directory.
         transform (Callable, optional): Optional preprocessing transform applied
-            to each loaded image.
+            to each loaded image. This may include data augmentation during
+            training or deterministic preprocessing during validation.
 
     Attributes:
         root_dir (Path): Normalized dataset root path.
@@ -79,16 +86,7 @@ class CustomImageDataset(Dataset):
     def __len__(self):
         return len(self.samples)
 
-    def __getitem__(self, idx):
-        """
-        Load and return a single sample from the dataset.
-
-        Args:
-            idx (int): Index of the sample to retrieve.
-
-        Returns:
-            tuple: (image_tensor, label_index)
-        """
+    def __getitem__(self, idx) -> tuple:
         img_path, label = self.samples[idx]
         image = Image.open(img_path).convert("RGB")
 
