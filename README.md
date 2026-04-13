@@ -17,6 +17,10 @@
   - [Training Output and Logging](#training-output-and-logging)
   - [Single‑Image Inference](#single-image-inference)
 - [Results](#results)
+  - [Training and Validation Accuracy](#training-and-validation-accuracy)
+  - [Training and Validation Loss](#training-and-validation-loss)
+  - [Normalized Confusion Matrix](#normalized-confusion-matrix)
+  - [Performance Summary](#performance-summary)
 - [Future Work](#future-work)
 - [License](#license)
 
@@ -235,17 +239,41 @@ python src/train.py --infer --image <path_to_image>
 This loads the saved model checkpoint from results/model_checkpoint.pth and prints the predicted class.
 
 ## Results
-After training the SimpleCNN model, the following evaluation artifacts are generated under ```results/plots/```:
- - **Training vs. Validation Accuracy Curve**
- - **Training vs. Validation Loss Curve**
- - **Normalized Confusion Matrix**
+Training the **SimpleCNN** model for **20 epochs** produced a set of evaluation artifacts that illustrate how the model learned over time and how well it generalizes to unseen tomato leaf images. These artifacts are stored under ```results/plots/``` and include accuracy and loss curves as well as a normalized confusion matrix.
 
-These plots summarize the model’s learning behavior and highlight class‑specific performance.
-The confusion matrix in particular shows which tomato diseases are most frequently confused by the model.
+### Training and Validation Accuracy
+The model shows a smooth and stable learning trajectory across 20 epochs. Accuracy improves rapidly during the first five epochs (from **53.8% → 86.2%**), then continues to rise steadily. Validation accuracy remains consistently high throughout training and reaches a final value of **95.97%**.
 
-Final metrics after **20 training epochs**:
- - **Training Accuracy**: 98.47%
- - **Validation Accuracy**: 92.75%
+This pattern indicates strong generalization and no signs of overfitting.
+
+![Accuracy Curve](results/plots/accuracy_curve.png)
+
+### Training and Validation Loss
+Training loss decreases from **1.32 → 0.17**, while validation loss follows a similar trend, ending at **0.14**. The close alignment between the two curves demonstrates that the model maintains stable generalization and avoids divergence or instability.
+
+![Loss Curve](results/plots/loss_curve.png)
+
+### Normalized Confusion Matrix
+The confusion matrix highlights strong per‑class performance across all ten tomato leaf disease categories. Most classes achieve **>90%** normalized accuracy. The model performs particularly well on:
+ - Healthy
+ - Curl virus
+ - Spider mites
+ - Target spot
+
+Misclassifications occur primarily between visually similar fungal diseases (e.g., **Early blight** vs. **Late blight**). This pattern is expected and highlights where more advanced architectures or transfer learning can provide significant improvements.
+
+![Confusion Matrix](results/plots/confusion_matrix.png)
+
+### Performance Summary
+ - **Final Training Accuracy:** 94.01%
+ - **Final Validation Accuracy:** 95.97%
+ - **Final Training Loss:** 0.1695
+ - **Final Validation Loss:** 0.1362
+ - **Strong per‑class performance** with minimal confusion between disease categories
+ - **Stable convergence** with no overfitting
+ - **Robust evaluation suite** including accuracy/loss curves and a normalized confusion matrix
+
+These results demonstrate that even a lightweight CNN can achieve strong performance on the tomato leaf disease dataset, though the gap between training and validation accuracy suggests that more expressive models (e.g., ResNet18, MobileNetV2) will likely yield further gains.
 
 ## Future Work
 Several improvements can further enhance model performance and robustness:

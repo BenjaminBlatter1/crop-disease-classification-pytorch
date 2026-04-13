@@ -26,7 +26,7 @@ def plot_training_curves(epochs, list_of_training_accuracies, list_of_training_l
     plt.xlim(1, len(x_axis_scaling))
     plt.xticks(x_axis_scaling)
     
-    plt.title("Loss Curve")
+    plt.title("SimpleCNN Training and Validation Loss Over 20 Epochs")
     plt.xlabel("Number of Epochs")
     plt.ylabel("Loss")
     
@@ -43,7 +43,7 @@ def plot_training_curves(epochs, list_of_training_accuracies, list_of_training_l
     plt.xlim(1, len(x_axis_scaling))
     plt.xticks(x_axis_scaling)
     
-    plt.title("Accuracy Curve")
+    plt.title("SimpleCNN Training and Validation Accuracy Over 20 Epochs")
     plt.xlabel("Number of Epochs")
     plt.ylabel("Accuracy")
     
