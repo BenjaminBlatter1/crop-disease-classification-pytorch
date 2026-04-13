@@ -43,12 +43,15 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-from config import Config
-from inference import run_inference
-from models.convolutional_neural_network import SimpleCNN
-
 import logging
 from tqdm import tqdm
+
+# Project specific imports
+from config import Config
+from evaluation.confusion_matrix import plot_confusion_matrix
+from inference import run_inference
+from models.convolutional_neural_network import SimpleCNN
+from visualization.plot_metrics import plot_training_curves
 
 # ---------------------------------------------------------
 # Logging configuration
@@ -385,7 +388,6 @@ def train_model(epochs) -> bool:
         logger.info(f"Validation Loss: {validation_loss:.4f} | Validation Accuracy: {validation_accuracy:.4f}")
 
     # Plot curves
-    from visualization.plot_metrics import plot_training_curves
     plot_training_curves(
         epochs,
         list_of_training_accuracies,
@@ -395,7 +397,6 @@ def train_model(epochs) -> bool:
     )
 
     # Confusion matrix
-    from evaluation.confusion_matrix import plot_confusion_matrix
     class_names = training_dataset.classes
     plot_confusion_matrix(all_labels_from_validation, all_predictions_from_validation, class_names)
     
