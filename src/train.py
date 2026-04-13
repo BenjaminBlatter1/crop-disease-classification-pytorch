@@ -348,6 +348,16 @@ def train_model(epochs) -> bool:
     from evaluation.confusion_matrix import plot_confusion_matrix
     class_names = training_dataset.classes
     plot_confusion_matrix(all_labels_from_validation, all_predictions_from_validation, class_names)
+    
+    # Save generated state model
+    torch.save(model.state_dict(), "results/model_checkpoint.pth")
+    
+    # Save training meta data
+    with open("results/training_metadata.txt", "w") as training_metadata:
+        training_metadata.write(f"epochs={epochs}\n")
+        training_metadata.write(f"final_training_accuracy={training_accuracy}\n")
+        training_metadata.write(f"final_validation_accuracy={validation_accuracy}\n")
+
 
     print(green("\nTraining complete."))
     return True
