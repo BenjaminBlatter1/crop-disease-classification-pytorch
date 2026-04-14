@@ -34,8 +34,8 @@ The project includes:
 - A simple CNN model for classification
 - Built‑in pipeline checks to ensure the setup is correct before training
 
-
 ## Project Structure
+```
 ├── data/
 │   ├── raw/         # Downloaded dataset
 │   └── processed/
@@ -64,6 +64,7 @@ The project includes:
 │
 ├── README.md
 └── requirements.txt
+```
 
 ## Virtual Environment Setup
 Create and activate a virtual environment:

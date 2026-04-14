@@ -384,8 +384,8 @@ def train_model(epochs) -> bool:
         list_of_validation_accuracies.append(validation_accuracy)
         list_of_validation_losses.append(validation_loss)
 
-        logger.info(f"Training Loss: {training_loss:.4f} | Training Accuracy: {training_accuracy:.4f}")
-        logger.info(f"Validation Loss: {validation_loss:.4f} | Validation Accuracy: {validation_accuracy:.4f}")
+        logger.info(f"Training Loss: {training_loss:.2f} | Training Accuracy: {training_accuracy:.4f}")
+        logger.info(f"Validation Loss: {validation_loss:.2f} | Validation Accuracy: {validation_accuracy:.4f}")
 
     # Plot curves
     plot_training_curves(
@@ -406,10 +406,10 @@ def train_model(epochs) -> bool:
     # Save training meta data
     with open("results/training_metadata.txt", "w") as training_metadata:
         training_metadata.write(f"Total number of epochs: {epochs}\n")
-        training_metadata.write(f"Final training accuracy: {training_accuracy}\n")
-        training_metadata.write(f"Final training loss: {training_loss}\n")
-        training_metadata.write(f"Final validation accuracy: {validation_accuracy}\n")
-        training_metadata.write(f"Final validation loss: {validation_loss}\n")
+        training_metadata.write(f"Final training accuracy: {training_accuracy:.4f}\n")
+        training_metadata.write(f"Final training loss: {training_loss:.2f}\n")
+        training_metadata.write(f"Final validation accuracy: {validation_accuracy:.4f}\n")
+        training_metadata.write(f"Final validation loss: {validation_loss:.2f}\n")
 
     logger.info("Training complete.")
     return True
