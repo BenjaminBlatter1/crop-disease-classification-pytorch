@@ -2,9 +2,9 @@
 Centralized configuration settings for the tomato leaf disease classification project.
 
 This module defines the Config class, which stores all project-wide constants
-related to dataset paths, training hyperparameters, model settings, and device
-selection. Centralizing these values ensures consistent usage across the codebase
-and simplifies future modifications.
+related to dataset paths, training hyperparameters and model settings. Centralizing 
+these values ensures consistent usage across the codebase and simplifies future 
+modifications.
 """
 
 class Config:
@@ -17,13 +17,10 @@ class Config:
         val_dir (str): Directory containing the validation split.
 
         batch_size (int): Number of samples per training batch.
-        num_epochs (int): Total number of training epochs.
-        learning_rate (float): Learning rate for the optimizer.
         num_workers (int): Number of subprocesses used for DataLoader operations.
-        num_classes (int): Number of output classes for classification.
+        learning_rate (float): Learning rate for the optimizer.
 
         image_size (tuple[int, int]): Target spatial resolution for input images.
-        device (str): Compute device identifier ("cuda", "cpu", etc.).
         
         use_augmentation (bool): Enables optional data augmentation during
         training. When True, the training transform pipeline applies random
@@ -37,14 +34,11 @@ class Config:
 
     # Training
     batch_size = 32
-    num_epochs = 10
-    learning_rate = 1e-3
     num_workers = 4
-    num_classes = 2
+    learning_rate = 1e-3
 
     # Model
     image_size = (224, 224)
-    device = "cuda"
     
     #Misc
     use_augmentation = False

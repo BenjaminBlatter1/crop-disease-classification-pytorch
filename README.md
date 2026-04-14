@@ -15,7 +15,8 @@
     - [How to switch augmentation mode?](#how-to-switch-augmentation-mode)
     - [Transform pipeline](#transform-pipeline)
   - [Training Output and Logging](#training-output-and-logging)
-  - [Single‑Image Inference](#single-image-inference)
+- [Model Export (TorchScript & ONNX)](#model-export)
+- [Single‑Image Inference](#single-image-inference)
 - [Results](#results)
   - [Training and Validation Accuracy](#training-and-validation-accuracy)
   - [Training and Validation Loss](#training-and-validation-loss)
@@ -47,11 +48,13 @@ The project includes:
 │   └── model_checkpoint.pth  # Saved model weights (after training)
 │
 ├── scripts/
-│   └── split_tomato_dataset.sh  # Tomato-only dataset preparation
+│   ├── export_model.py         # Export model to TorchScript/ONNX
+│   └── split_tomato_dataset.sh # Tomato-only dataset preparation
 │
 ├── src/
 │   ├── evaluation/
-│   │   └── confusion_matrix.py              # Normalized confusion matrix generation
+│   │   ├── confusion_matrix.py # Normalized confusion matrix generation
+│   │   └── export.py           # TorchScript/ONNX export utilities
 │   ├── models/
 │   │   └── convolutional_neural_network.py  # Simple CNN model
 │   ├── visualization/
@@ -59,7 +62,6 @@ The project includes:
 │   ├── config.py                            # Centralized configuration settings
 │   ├── dataset.py                           # Custom dataset loader
 │   ├── inference.py                         # Single-image inference script
-│   ├── model.py                             # ResNet‑18 model factory
 │   └── train.py                             # Full training pipeline + tests
 │
 ├── README.md
@@ -151,15 +153,15 @@ Before training, the project provides built‑in checks to ensure everything is 
 Run all checks:
 
 ```bash
-python src/train.py --test all
+python -m src.train --test all
 ```
 
 Or run a specific check:
 
 ```bash
-python src/train.py --test project_structure # Project structure check
-python src/train.py --test dataset           # Dataset & DataLoader check
-python src/train.py --test model             # Model forward-pass check
+python -m src.train --test project_structure # Project structure check
+python -m src.train --test dataset           # Dataset & DataLoader check
+python -m src.train --test model             # Model forward-pass check
 ```
 
 **What the checks validate**
@@ -174,12 +176,12 @@ Once the dataset and pipeline checks pass, you can start training the Convolutio
 
 Train with default 5 epochs:
 ```bash
-python src/train.py --train
+python -m src.train --train
 ```
 
 Train with a custom number of epochs:
 ```bash
-python src/train.py --train --epochs <desired_number_of_epochs>
+python -m src.train --train --epochs <desired_number_of_epochs>
 ```
 
 ### Data Augmentation
@@ -206,7 +208,7 @@ Config.use_augmentation = False
 or via the command‑line interface:
 
 ```bash
-python src/train.py --train --augment
+python -m src.train --train --augment --yes
 ```
 
 If ```--augment``` is omitted, augmentation defaults to the value defined in Config.
@@ -228,16 +230,52 @@ All training information (loss, accuracy, epoch summaries) is also written to:
 results/training.log
 ```
 
-This makes the training process transparent and easy to debug.
+Inference and export scripts use the same logging format as training, but output only to the console.
 
-### Single Image Inference
-After training, you can run inference on any tomato leaf image:
+## Model Export (TorchScript & ONNX)
+After training, the model can be exported to deployment‑ready formats. This project supports:
+ - TorchScript (.pt) for PyTorch‑based deployment
+ - ONNX (.onnx) for cross‑framework and edge‑device deployment
 
+Export the trained model:
 ```bash
-python src/train.py --infer --image <path_to_image>
+python -m scripts.export_model --checkpoint results/model_checkpoint.pth --out_dir exports/
 ```
 
-This loads the saved model checkpoint from results/model_checkpoint.pth and prints the predicted class.
+This generates:
+
+```
+exports/model_torchscript.pt    # TorchScript model
+exports/model_onnx.onnx         # ONNX model
+```
+
+These artifacts can be used for mobile, embedded, or real‑time inference pipelines.
+
+
+**Note:** Export always runs on CPU to ensure stable TorchScript and ONNX generation.
+
+## Single Image Inference
+You can run inference using either the **training checkpoint**, the **exported TorchScript model,** or the **exported ONNX model.**
+
+**Using the trained model checkpoint:**
+
+```bash
+python -m src.inference --model_type checkpoint --model_path <path_to_trained_model_checkpoint>  --image <path_to_image>
+```
+
+**Using a TorchScript model:**
+
+```bash
+python -m src.inference --model_type torchscript --model_path <path_to_torchscript_model_file> --image <path_to_image>
+```
+
+**Using a ONNX model:**
+
+```bash
+python -m src.inference --model_type onnx --model_path <path_to_onnx_model_file> --image <path_to_image>
+```
+
+All of those commands print the predicted class and confidence score.
 
 ## Results
 Training the **SimpleCNN** model for **20 epochs** produced a set of evaluation artifacts that illustrate how the model learned over time and how well it generalizes to unseen tomato leaf images. These artifacts are stored under ```results/plots/``` and include accuracy and loss curves as well as a normalized confusion matrix.
@@ -282,7 +320,8 @@ Several improvements can further enhance model performance and robustness:
  - Hyperparameter tuning (learning rate, batch size, optimizer)
  - Larger or deeper model architectures
  - Test‑set evaluation and cross‑validation
- - Exporting the model for mobile or edge deployment
+ - Benchmarking TorchScript/ONNX inference latency on CPU/GPU
+ - Quantization (FP16/INT8) for edge deployment
 
 ## License 
 This project is released under the MIT License, a permissive open‑source license that allows reuse, modification, and distribution with minimal restrictions.

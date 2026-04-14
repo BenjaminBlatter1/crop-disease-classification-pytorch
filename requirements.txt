@@ -9,3 +9,5 @@ opencv-python
 kaggle
 seaborn
 Pillow
+onnx 
+onnxscript

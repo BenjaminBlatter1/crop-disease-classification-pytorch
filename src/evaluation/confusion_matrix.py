@@ -102,8 +102,10 @@ def plot_confusion_matrix(
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
 
-    # Normalize rows (true classes)
-    cm_normalized = cm.astype("float") / cm.sum(axis=1, keepdims=True)
+    # Normalize rows (true classes) with safe division (avoid divide-by-zero)
+    denom = cm.sum(axis=1, keepdims=True)
+    denom[denom == 0] = 1
+    cm_normalized = cm.astype(float) / denom
 
     # Plot
     plt.figure(figsize=(10, 8))

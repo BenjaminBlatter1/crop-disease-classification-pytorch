@@ -1,6 +1,5 @@
 """
-Training, inference, and diagnostic utilities for the tomato leaf disease
-classification project.
+Training and diagnostic utilities for the tomato leaf disease classification project.
 
 This module provides:
 - project structure validation
@@ -10,8 +9,6 @@ This module provides:
 - optional data augmentation during training
 - generation of training and validation metric plots (loss and accuracy)
 - normalized confusion matrix computation
-- single-image inference using a trained model checkpoint
-- command-line interface for running tests, training, or inference
 
 Augmentation is controlled via Config.use_augmentation or the --augment flag.
 Validation transforms remain deterministic to ensure consistent evaluation.
@@ -19,25 +16,23 @@ Validation transforms remain deterministic to ensure consistent evaluation.
 The module is designed to be executed as a script:
 
     # Run all diagnostic checks
-    python src/train.py --test all
+    python -m src.train --test all
 
     # Train the model (default: 5 epochs)
-    python src/train.py --train
+    python -m src.train --train
 
     # Train with augmentation enabled explicitly
-    python src/train.py --train --augment
+    python -m src.train --train --augment yes
 
     # Train with a custom number of epochs
-    python src/train.py --train --epochs <desired_number_of_epochs>
-
-    # Run inference on a single image
-    python src/train.py --infer --image <path_to_image>
+    python -m src.train --train --epochs <desired_number_of_epochs>
 
 It expects the dataset to be located under data/processed/ with the standard ImageFolder structure.
 """
 
 import argparse
 import os
+from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
@@ -46,12 +41,25 @@ from torchvision import datasets, transforms
 import logging
 from tqdm import tqdm
 
-# Project specific imports
-from config import Config
-from evaluation.confusion_matrix import plot_confusion_matrix
-from inference import run_inference
-from models.convolutional_neural_network import SimpleCNN
-from visualization.plot_metrics import plot_training_curves
+# When executing the module as a script (python src/train.py)
+# ensure the project root is on sys.path and set the package name so
+# relative imports below work. Preferred usage is: `python -m src.train`.
+if __name__ == "__main__" and __package__ is None:
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    __package__ = "src"
+
+# Project specific imports (package-relative)
+from .config import Config
+from .evaluation.confusion_matrix import plot_confusion_matrix
+from .models.convolutional_neural_network import SimpleCNN
+from .utils.device import get_best_device
+from .visualization.plot_metrics import plot_training_curves
+
+# Ensure results directory exists before configuring file logging
+Path("results").mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------
 # Logging configuration
@@ -66,38 +74,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------
-# Utility: device selection
-# ---------------------------------------------------------
-def get_best_device() -> torch.device:
-    """
-    Select the best available compute device.
-
-    The function checks for GPU backends in the following order:
-    1. NVIDIA CUDA
-    2. Intel XPU
-    3. AMD ROCm
-    4. Apple Metal (MPS)
-    5. CPU fallback
-
-    Returns:
-        torch.device: The most capable available device.
-    """
-    
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-
-    if hasattr(torch, "xpu") and torch.xpu.is_available():
-        return torch.device("xpu")
-
-    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        return torch.device("mps")
-
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-
-    return torch.device("cpu")
-
 def get_transforms() -> tuple[transforms.Compose, transforms.Compose]:
     """
     Create training and validation transform pipelines.
@@ -111,7 +87,7 @@ def get_transforms() -> tuple[transforms.Compose, transforms.Compose]:
     """
     if Config.use_augmentation:
         training_transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize(Config.image_size),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomRotation(15),
             transforms.ColorJitter(
@@ -123,12 +99,12 @@ def get_transforms() -> tuple[transforms.Compose, transforms.Compose]:
         ])
     else:
         training_transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize(Config.image_size),
             transforms.ToTensor(),
         ])
 
     validation_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize(Config.image_size),
         transforms.ToTensor(),
     ])
 
@@ -199,16 +175,15 @@ def test_dataset() -> bool:
     _, transform = get_transforms()
 
     dataset = datasets.ImageFolder(data_dir, transform=transform)
-    loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    loader = DataLoader(dataset, batch_size=Config.batch_size, shuffle=True, num_workers=Config.num_workers)
 
     logger.info(f"Found {len(dataset.classes)} classes: {dataset.classes}")
 
     images, labels = next(iter(loader))
 
     logger.info("Batch loaded successfully.")
-    logger.info("Images:", images.shape)
-    logger.info("Labels:", labels.shape)
-
+    logger.info(f"Images: {images.shape}")
+    logger.info(f"Labels: {labels.shape}")
     logger.info("Dataset test looks good.")
 
     return True
@@ -238,7 +213,7 @@ def test_model() -> bool:
     _, transform = get_transforms()
 
     dataset = datasets.ImageFolder(data_dir, transform=transform)
-    loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    loader = DataLoader(dataset, batch_size=Config.batch_size, shuffle=True, num_workers=Config.num_workers)
 
     images, labels = next(iter(loader))
     num_classes = len(dataset.classes)
@@ -301,8 +276,8 @@ def train_model(epochs) -> bool:
     training_dataset = datasets.ImageFolder("data/processed/train", transform=training_transform)
     validation_dataset = datasets.ImageFolder("data/processed/val", transform=validation_transform)
 
-    training_loader = DataLoader(training_dataset, batch_size=32, shuffle=True)
-    validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False)
+    training_loader = DataLoader(training_dataset, batch_size=Config.batch_size, shuffle=True, num_workers=Config.num_workers)
+    validation_loader = DataLoader(validation_dataset, batch_size=Config.batch_size, shuffle=False, num_workers=Config.num_workers)
 
     num_classes = len(training_dataset.classes)
     model = SimpleCNN(num_classes).to(device)
@@ -401,7 +376,13 @@ def train_model(epochs) -> bool:
     plot_confusion_matrix(all_labels_from_validation, all_predictions_from_validation, class_names)
     
     # Save generated state model
-    torch.save(model.state_dict(), "results/model_checkpoint.pth")
+    torch.save({
+        "model_state_dict": model.state_dict(),
+        "num_classes": num_classes,
+        "class_names": class_names,
+    }, "results/model_checkpoint.pth")
+
+
     
     # Save training meta data
     with open("results/training_metadata.txt", "w") as training_metadata:
@@ -419,7 +400,7 @@ def train_model(epochs) -> bool:
 # ---------------------------------------------------------
 def main():
     """
-    Command-line interface for running diagnostics, training, or single-image inference.
+    Command-line interface for running diagnostics and model training.
 
     Supported modes:
         --test project_structure    Validate directory layout
@@ -429,19 +410,14 @@ def main():
 
         --train                     Run the full training pipeline
         --epochs N                  Override default epoch count (default: 5)
-        --augment                   Enable data augmentation during training
-
-        --inference                 Run inference on a single image
-        --image <path_to_image>     Image file used for inference (required with --inference)
+        --augment {yes,no}          Explicitly enable or disable data augmentation.
 
     Behavior:
         - If --test is provided, the corresponding diagnostic is executed.
         - If --train is provided, the training pipeline is executed.
-        - If --augment is provided, the training pipeline uses augmented transforms.
+        - If --augment is set to "yes", the training pipeline uses augmented transforms.
+        - If --augment is set to "no", the training pipeline uses deterministic transforms.
         - If --train is used without --epochs, training defaults to 5 epochs.
-        - If --inference is provided, a trained model checkpoint is loaded and used to
-          classify the image specified by --image.
-        - If --inference is used without --image, an error message is shown.
         - If no mode is selected, a help message is printed.
     """
 
@@ -470,27 +446,15 @@ def main():
     
     parser.add_argument(
         "--augment",
-        action="store_true",
-        help="Enable data augmentation during training."
-    )
-
-    parser.add_argument(
-        "--inference",
-        action="store_true",
-        help="Run inference on a single image."
-    )
-
-    parser.add_argument(
-        "--image",
         type=str,
-        default=None,
-        help="Path to an image for inference to be applied."
+        choices=["yes", "no"],
+        default="no",
+        help="Enable or disable augmentation."
     )
 
     args = parser.parse_args()
     
-    # Apply augmentation flag
-    Config.use_augmentation = args.augment
+    Config.use_augmentation = args.augment == "yes"
 
     if args.test == "all":
         test_project_structure()
@@ -504,13 +468,8 @@ def main():
         test_model()
     elif args.train:
         train_model(args.epochs)
-    elif args.inference:
-        if args.image is None:
-            logger.error("Error: --inference requires --image <path_to_image>")
-            return
-        run_inference(args.image)
     else:
-        logger.info("No mode selected. Use --test, --train, or --inference.")
+        logger.info("No mode selected. Use --test or --train.")
 
 if __name__ == "__main__":
     main()

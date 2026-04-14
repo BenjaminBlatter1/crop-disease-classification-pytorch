@@ -78,9 +78,10 @@ class CustomImageDataset(Dataset):
         Only files with extensions .jpg, .jpeg, or .png are included.
         """
         for cls_name, idx in self.classes.items():
-            class_dir = self.root_dir / cls_name #Use Path’s "/"" operator for joining two strings
-            for img_path in class_dir.glob("*"):
-                if img_path.suffix.lower() in [".jpg", ".jpeg", ".png"]:
+            class_dir = self.root_dir / cls_name
+            # Recursively collect image files from class directories
+            for img_path in class_dir.rglob("*"):
+                if img_path.is_file() and img_path.suffix.lower() in [".jpg", ".jpeg", ".png"]:
                     self.samples.append((img_path, idx))
 
     def __len__(self):
