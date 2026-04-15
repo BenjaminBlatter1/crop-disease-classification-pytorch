@@ -1,38 +1,38 @@
 """
-Utilities for exporting trained models to deployment formats.
+Model export utilities for deployment.
 
-This module provides functions to load a trained SimpleCNN checkpoint
-and export it to TorchScript (.pt) and ONNX (.onnx) formats. These
-formats are suitable for deployment on edge devices or integration
-into production systems.
+This module loads a trained model checkpoint (of any model architecture 
+supportedby the project's model factory) and exports it to TorchScript (.pt) 
+and ONNX (.onnx) formats. Export always runs on CPU to ensure deterministic
+and hardware-agnostic deployment artifacts.
+
+The checkpoint must contain:
+    - "model_architecture": string identifying the architecture
+    - "num_classes": number of output classes
+    - "model_state_dict": trained model weights
 """
 
 from pathlib import Path
-
 import torch
-from .convolutional_neural_network import SimpleCNN
+
+from src.models.model_factory import create_model
 
 
 def load_checkpoint(model_path: str) -> torch.nn.Module:
     """
-    Load a trained SimpleCNN model from a checkpoint for export.
+    Load a trained model from a checkpoint for export.
 
-    The checkpoint is always loaded on CPU to ensure stable TorchScript
-    and ONNX export, regardless of the hardware used during training.
-
-    The checkpoint must contain:
-        - "model_state_dict": state dict of the SimpleCNN
-        - "num_classes": number of output classes
+    Always loads on CPU for stable TorchScript and ONNX export.
 
     Args:
         model_path: Path to the .pth checkpoint file.
 
     Returns:
-        torch.nn.Module: SimpleCNN model with loaded weights in eval mode.
+        torch.nn.Module: Model instance with loaded weights in eval mode.
 
     Raises:
-        KeyError: If required keys are missing from the checkpoint.
         FileNotFoundError: If the checkpoint file does not exist.
+        KeyError: If required keys are missing from the checkpoint.
     """
     model_path = Path(model_path)
     if not model_path.exists():
@@ -40,17 +40,22 @@ def load_checkpoint(model_path: str) -> torch.nn.Module:
 
     state = torch.load(model_path, map_location="cpu")
 
+    model_architecture = state.get("model_architecture")
+    if model_architecture is None:
+        raise KeyError("Checkpoint missing 'model_architecture'. Cannot export.")
+
     num_classes = state.get("num_classes")
     if num_classes is None:
-        raise KeyError("Checkpoint is missing 'num_classes'. Cannot export model.")
+        raise KeyError("Checkpoint missing 'num_classes'. Cannot export.")
 
     model_state = state.get("model_state_dict")
     if model_state is None:
-        raise KeyError("Checkpoint is missing 'model_state_dict'. Cannot export model.")
+        raise KeyError("Checkpoint missing 'model_state_dict'. Cannot export.")
 
-    model = SimpleCNN(num_classes=num_classes)
+    model = create_model(model_architecture, num_classes=num_classes)
     model.load_state_dict(model_state)
     model.eval()
+
     return model
 
 

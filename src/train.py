@@ -12,7 +12,7 @@ This module provides:
 - model architecture selection (SimpleCNN, pretrained ResNet-18 etc.)
 - layer-by-layer model summary and parameter count logging
 
-Augmentation is controlled via Config.use_augmentation or the --augment flag.
+Augmentation is controlled via the --augment flag.
 Validation transforms remain deterministic to ensure consistent evaluation.
 
 Model architecture is selected at training time via --model-architecture.
@@ -85,18 +85,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def get_transforms() -> tuple[transforms.Compose, transforms.Compose]:
+def get_transforms(use_augmentation: bool = False) -> tuple[transforms.Compose, transforms.Compose]:
     """
     Create training and validation transform pipelines.
 
-    When Config.use_augmentation is True, the training pipeline applies light
+    When use_augmentation is True, the training pipeline applies light
     augmentation (horizontal flips, small rotations, color jitter). Validation
     transforms remain deterministic to ensure consistent evaluation.
 
     Returns:
         tuple: (training_transform, validation_transform)
     """
-    if Config.use_augmentation:
+    if use_augmentation:
         training_transform = transforms.Compose([
             transforms.Resize(Config.image_size),
             transforms.RandomHorizontalFlip(p=0.5),
@@ -248,14 +248,14 @@ def test_model() -> bool:
 # ---------------------------------------------------------
 # Training Loop
 # ---------------------------------------------------------
-def train_model(epochs: int, model_architecture: str) -> bool:
+def train_model(use_augmentation: bool, epochs: int, model_architecture: str) -> bool:
     """
     Train the specified model architecture for a given number of epochs.
 
     The function:
         - loads training and validation datasets
         - applies preprocessing transforms, including optional data augmentation
-          when Config.use_augmentation is enabled
+          when augmentation is enabled via the --augment flag
         - selects the best available compute device and moves the model to it
         - instantiates the chosen architecture (SimpleCNN, pretrained ResNet-18, etc.)
         - logs a full layer-by-layer model summary and total parameter count
@@ -267,6 +267,7 @@ def train_model(epochs: int, model_architecture: str) -> bool:
         - saves a model checkpoint containing weights, class names, and metadata
 
     Args:
+        use_augmentation (bool): Whether to apply data augmentation during training.
         epochs (int): Number of full training epochs.
         model_architecture (str): Name of the model architecture to instantiate.
 
@@ -285,7 +286,7 @@ def train_model(epochs: int, model_architecture: str) -> bool:
     logger.info(f"Using device: {device}")
 
     # Load transforms (with or without augmentation)
-    training_transform, validation_transform = get_transforms()
+    training_transform, validation_transform = get_transforms(use_augmentation)
 
     # Datasets
     training_dataset = datasets.ImageFolder("data/processed/train", transform=training_transform)
@@ -407,6 +408,7 @@ def train_model(epochs: int, model_architecture: str) -> bool:
         "model_state_dict": model.state_dict(),
         "num_classes": num_classes,
         "class_names": class_names,
+        "model_architecture": model_architecture,
     }, "results/model_checkpoint.pth")
 
 
@@ -491,7 +493,7 @@ def main():
 
     args = parser.parse_args()
     
-    Config.use_augmentation = args.augment == "yes"
+    use_augmentation = (args.augment == "yes")
 
     if args.test == "all":
         test_project_structure()
@@ -504,7 +506,7 @@ def main():
     elif args.test == "model":
         test_model()
     elif args.train:
-        train_model(args.epochs, args.model_architecture)
+        train_model(use_augmentation,args.epochs, args.model_architecture)
     else:
         logger.info("No mode selected. Use --test or --train.")
 

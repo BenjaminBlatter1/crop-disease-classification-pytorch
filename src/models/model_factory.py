@@ -16,7 +16,7 @@ Pretrained backbones (e.g., ResNet-18) are initialized with ImageNet weights
 and then fine-tuned during training.
 
 Functions:
-    create_model(model_type: str, num_classes: int) -> nn.Module
+    create_model(model_architecture: str, num_classes: int) -> nn.Module
         Build and return the requested architecture with the correct output dimension.
 """
 
@@ -25,23 +25,23 @@ from torchvision import models
 from .convolutional_neural_network import SimpleCNN
 
 
-def create_model(model_type: str, num_classes: int) -> nn.Module:
+def create_model(model_architecture: str, num_classes: int) -> nn.Module:
     """
     Create a model architecture based on the selected model type.
 
     Args:
-        model_type (str): Name of the architecture ("simplecnn", "resnet18").
+        model_architecture (str): Name of the architecture ("simplecnn", "resnet18").
         num_classes (int): Number of output classes.
 
     Returns:
         nn.Module: Instantiated model.
     """
-    if model_type == "simplecnn":
+    if model_architecture == "simplecnn":
         return SimpleCNN(num_classes)
 
-    if model_type == "resnet18":
+    if model_architecture == "resnet18":
         model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
         return model
 
-    raise ValueError(f"Unknown model type: {model_type}")
+    raise ValueError(f"Unknown model type: {model_architecture}")
