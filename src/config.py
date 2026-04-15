@@ -20,7 +20,7 @@ class Config:
         num_workers (int): Number of subprocesses used for DataLoader operations.
         learning_rate (float): Learning rate for the optimizer.
 
-        image_size (tuple[int, int]): Target spatial resolution for input images.
+        image_size (int): Target height/widht (equal since square images are used)for input images.
         
         use_augmentation (bool): Enables optional data augmentation during
         training. When True, the training transform pipeline applies random
@@ -38,7 +38,7 @@ class Config:
     learning_rate = 1e-3
 
     # Model
-    image_size = (224, 224)
+    image_size = 224
     
     #Misc
     use_augmentation = False

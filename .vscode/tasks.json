@@ -22,7 +22,8 @@
                 "-m", "src.train",
                 "--train",
                 "--epochs", "${input:epochs}",
-                "--augment", "${input:augment}"
+                "--augment", "${input:augment}",
+                "--model-architecture", "${input:modelArchitecture}"
             ],
             "presentation": {
                 "reveal": "always",
@@ -83,6 +84,16 @@
             "description": "Enable augmentation?",
             "options": ["yes", "no"],
             "default": "no"
+        },
+        {
+            "id": "modelArchitecture",
+            "type": "pickString",
+            "description": "Select model architecture",
+            "options": [
+                "simplecnn",
+                "resnet18"
+            ],
+            "default": "simplecnn"
         },
         {
             "id": "checkpointPath",

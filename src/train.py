@@ -9,9 +9,14 @@ This module provides:
 - optional data augmentation during training
 - generation of training and validation metric plots (loss and accuracy)
 - normalized confusion matrix computation
+- model architecture selection (SimpleCNN, pretrained ResNet-18 etc.)
+- layer-by-layer model summary and parameter count logging
 
 Augmentation is controlled via Config.use_augmentation or the --augment flag.
 Validation transforms remain deterministic to ensure consistent evaluation.
+
+Model architecture is selected at training time via --model-architecture.
+Pretrained architectures (e.g. ResNet-18) are fine-tuned on the tomato leaf dataset.
 
 The module is designed to be executed as a script:
 
@@ -27,8 +32,12 @@ The module is designed to be executed as a script:
     # Train with a custom number of epochs
     python -m src.train --train --epochs <desired_number_of_epochs>
 
+    # Train with a custom model architecture
+    python -m src.train --train --model-architecture {simplecnn, resnet18, ...}
+
 It expects the dataset to be located under data/processed/ with the standard ImageFolder structure.
 """
+
 
 import argparse
 import os
@@ -37,6 +46,7 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+from torchsummary import summary
 
 import logging
 from tqdm import tqdm
@@ -55,6 +65,7 @@ if __name__ == "__main__" and __package__ is None:
 from .config import Config
 from .evaluation.confusion_matrix import plot_confusion_matrix
 from .models.convolutional_neural_network import SimpleCNN
+from .models.model_factory import create_model
 from .utils.device import get_best_device
 from .visualization.plot_metrics import plot_training_curves
 
@@ -237,23 +248,27 @@ def test_model() -> bool:
 # ---------------------------------------------------------
 # Training Loop
 # ---------------------------------------------------------
-def train_model(epochs) -> bool:
+def train_model(epochs: int, model_architecture: str) -> bool:
     """
-    Train the SimpleCNN model for a specified number of epochs.
+    Train the specified model architecture for a given number of epochs.
 
     The function:
         - loads training and validation datasets
-        - applies preprocessing transforms, including optional data augmentation when 
-          Config.use_augmentation is enabled
-        - selects the best available compute device
-        - trains the model using cross-entropy loss and Adam optimizer
+        - applies preprocessing transforms, including optional data augmentation
+          when Config.use_augmentation is enabled
+        - selects the best available compute device and moves the model to it
+        - instantiates the chosen architecture (SimpleCNN, pretrained ResNet-18, etc.)
+        - logs a full layer-by-layer model summary and total parameter count
+        - trains the model using cross-entropy loss and the Adam optimizer
         - evaluates on the validation set after each epoch
         - records training/validation loss and accuracy metrics
         - generates and saves training curves (loss and accuracy) to results/plots/
-        - computes and saves a normalized confusion matrix and per-class accuracy metrics
+        - computes and saves a normalized confusion matrix for the final epoch
+        - saves a model checkpoint containing weights, class names, and metadata
 
     Args:
         epochs (int): Number of full training epochs.
+        model_architecture (str): Name of the model architecture to instantiate.
 
     Returns:
         bool: True when training completes successfully.
@@ -280,7 +295,19 @@ def train_model(epochs) -> bool:
     validation_loader = DataLoader(validation_dataset, batch_size=Config.batch_size, shuffle=False, num_workers=Config.num_workers)
 
     num_classes = len(training_dataset.classes)
-    model = SimpleCNN(num_classes).to(device)
+    model = create_model(model_architecture, num_classes).to(device)
+    
+    logger.info(f"Selected architecture: {model_architecture}")
+    logger.info(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
+
+    try:
+        summary_str = summary(
+            model,
+            input_size=(3, Config.image_size, Config.image_size)
+        )
+        logger.info("\n" + str(summary_str))
+    except Exception as e:
+        logger.warning(f"Model summary unavailable: {e}")
 
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -408,15 +435,17 @@ def main():
         --test model                Validate model forward pass
         --test all                  Run all diagnostic checks
 
-        --train                     Run the full training pipeline
-        --epochs N                  Override default epoch count (default: 5)
-        --augment {yes,no}          Explicitly enable or disable data augmentation.
+        --train                                         Run the full training pipeline
+        --epochs N                                      Override default epoch count (default: 5)
+        --augment {yes,no}                              Explicitly enable or disable data augmentation.
+        --model-architecture {simplecnn,resnet18, ...}  Select model architecture.
 
     Behavior:
         - If --test is provided, the corresponding diagnostic is executed.
         - If --train is provided, the training pipeline is executed.
         - If --augment is set to "yes", the training pipeline uses augmented transforms.
         - If --augment is set to "no", the training pipeline uses deterministic transforms.
+        - If --model-architecture is provided, the selected architecture is used for training.
         - If --train is used without --epochs, training defaults to 5 epochs.
         - If no mode is selected, a help message is printed.
     """
@@ -443,13 +472,21 @@ def main():
         default=5,
         help="Number of epochs to train for (default: 5)."
     )
-    
+
     parser.add_argument(
         "--augment",
         type=str,
         choices=["yes", "no"],
         default="no",
         help="Enable or disable augmentation."
+    )
+
+    parser.add_argument(
+        "--model-architecture",
+        type=str,
+        choices=["simplecnn", "resnet18"],
+        default="simplecnn",
+        help="Select model architecture."
     )
 
     args = parser.parse_args()
@@ -467,7 +504,7 @@ def main():
     elif args.test == "model":
         test_model()
     elif args.train:
-        train_model(args.epochs)
+        train_model(args.epochs, args.model_architecture)
     else:
         logger.info("No mode selected. Use --test or --train.")
 

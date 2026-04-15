@@ -9,15 +9,17 @@
 - [Prepare the Tomato Subset (train/val split)](#prepare-the-tomato-subset-trainval-split)
 - [Pipeline Verification](#pipeline-verification)
 - [Model Training](#model-training)
+  - [Choosing the Model Architecture](#choosing-the-model-architecture)
+  - [Customizing the Number of Epochs](#customizing-the-number-of-epochs)
   - [Data Augmentation](#data-augmentation)
-    - [What augmentation is applied?](#what-augmentation-is-applied)
-    - [Why is validation not augmented?](#why-is-validation-not-augmented)
-    - [How to switch augmentation mode?](#how-to-switch-augmentation-mode)
-    - [Transform pipeline](#transform-pipeline)
-  - [Training Output and Logging](#training-output-and-logging)
-- [Model Export (TorchScript & ONNX)](#model-export)
+  - [What Happens During Training](#what-happens-during-training)
+- [Model Export (TorchScript & ONNX)](#model-export-torchscript--onnx)
 - [Single‑Image Inference](#single-image-inference)
-- [VS Code Tasks (optional)](#vs-code-tasks)
+  - [Using a training checkpoint](#using-a-training-checkpoint)
+  - [Using a TorchScript model](#using-a-torchscript-model)
+  - [Using an ONNX model](#using-an-onnx-model)
+  - [What happens during inference](#what-happens-during-inference)
+- [VS Code Tasks](#vs-code-tasks)
 - [Results](#results)
   - [Training and Validation Accuracy](#training-and-validation-accuracy)
   - [Training and Validation Loss](#training-and-validation-loss)
@@ -54,10 +56,11 @@ The project includes:
 │
 ├── src/
 │   ├── evaluation/
-│   │   ├── confusion_matrix.py # Normalized confusion matrix generation
-│   │   └── export.py           # TorchScript/ONNX export utilities
+│   │   └── confusion_matrix.py # Normalized confusion matrix generation
 │   ├── models/
-│   │   └── convolutional_neural_network.py  # Simple CNN model
+│   │   ├── convolutional_neural_network.py # Simple CNN model
+│   │   ├── export.py                       # TorchScript/ONNX export utilities
+│   │   └── model_factory.py                # Model architectures for training and inference
 │   ├── visualization/
 │   │   └── plot_metrics.py                  # Accuracy/loss curve plotting
 │   ├── config.py                            # Centralized configuration settings
@@ -173,65 +176,78 @@ python -m src.train --test model             # Model forward-pass check
 These checks ensure the pipeline is stable and ready for training.
 
 ## Model Training
-Once the dataset and pipeline checks pass, you can start training the Convolutional Neural Network model.
 
-Train with default 5 epochs:
+The training pipeline supports multiple neural‑network architectures and provides configurable options for epochs, augmentation, and backbone selection. All models are trained on the processed tomato leaf dataset located under ```data/processed/```.
+
+Train with **default settings** (SimpleCNN, 5 epochs, no augmentation):
+
 ```bash
 python -m src.train --train
 ```
 
-Train with a custom number of epochs:
+### Choosing the Model Architecture
+Two architectures are currently supported:
+
+ - **SimpleCNN** – lightweight baseline for quick experiments
+ - **ResNet‑18 (pretrained)** – ImageNet‑initialized backbone fine‑tuned on the tomato leaf dataset
+
+Select the architecture using:
+
+```bash
+python -m src.train --train --model-architecture {simplecnn, resnet18}
+```
+
+If omitted, the default is **SimpleCNN**.
+
+### Customizing the Number of Epochs
+Specify a custom number of epochs:
+
 ```bash
 python -m src.train --train --epochs <desired_number_of_epochs>
 ```
-
-### Data Augmentation
-Data augmentation improves the model’s robustness by simulating natural variation in real tomato leaf images. Agricultural imagery often varies in lighting, orientation, and color, and augmentation helps the model generalize better to these conditions.
-
-#### What augmentation is applied?
-The training pipeline applies light, biologically plausible transformations:
- - random horizontal flips
- - small rotations (±15°)
- - mild color jitter (brightness, contrast, saturation)
-
-These augmentations increase dataset diversity without distorting the underlying leaf structure.
-
-#### Why is validation not augmented?
-Validation images remain clean and deterministic. This ensures that validation accuracy reflects true model performance rather than random augmentation noise. Augmenting validation data would make metrics unstable and non‑comparable across runs.
-
-#### How to switch augmentation mode?
-Augmentation is controlled through the global configuration:
-
-```python
-Config.use_augmentation = False
-```
-
-or via the command‑line interface:
+This can be combined with chosing a specific model architecture:
 
 ```bash
-python -m src.train --train --augment yes
+python -m src.train --train --epochs <desired_number_of_epochs> --model-architecture {simplecnn, resnet18}
 ```
 
-If ```--augment``` is omitted, augmentation defaults to "no".
+### Data Augmentation
+Augmentation improves robustness by simulating natural variation in agricultural imagery. The training pipeline applies biologically plausible transformations such as horizontal flips, small rotations, and mild color jitter.
 
-#### Transform pipeline
-The training script constructs the transform pipelines dynamically:
-
-```python
-train_transform, val_transform = get_transforms()
+Enable or disable augmentation explicitly:
+```bash
+python -m src.train --train --augment {yes, no}
 ```
 
-```get_transforms()``` returns a tuple of two ```torchvision.transforms.Compose``` objects: one for training (augmented or clean) and one for validation (always clean).
+Validation transforms remain deterministic to ensure consistent evaluation.
 
-### Training Output and Logging
-During training, the script displays live progress bars for both training and validation epochs.
-All training information (loss, accuracy, epoch summaries) is also written to:
+### What Happens During Training
+The training script:
 
+ - loads the training and validation datasets
+ - applies augmentation if enabled
+ - selects the best available compute device
+ - instantiates the chosen architecture
+ - logs a full layer‑by‑layer model summary and parameter count
+ - trains using cross‑entropy loss and the Adam optimizer
+ - evaluates after each epoch
+ - saves accuracy/loss curves and a normalized confusion matrix
+ - writes a checkpoint containing weights, class names, and metadata
+
+All plots are saved under:
+```
+results/plots/
+```
+
+The final checkpoint is saved as:
+```
+results/model_checkpoint.pth
+```
+
+Log files are stored under:
 ```
 results/training.log
 ```
-
-Inference and export scripts use the same logging format as training, but output only to the console.
 
 ## Model Export (TorchScript & ONNX)
 After training, the model can be exported to deployment‑ready formats. This project supports:
@@ -258,33 +274,43 @@ These artifacts can be used for mobile, embedded, or real‑time inference pipel
 **Note:** Export always runs on CPU to ensure stable TorchScript and ONNX generation.
 
 ## Single Image Inference
-You can run inference using either the **training checkpoint**, the **exported TorchScript model,** or the **exported ONNX model.**
+The inference pipeline supports three model formats: the **training checkpoint**, the **exported TorchScript model**, and the **exported ONNX model**. All formats use the same command‑line interface and produce a predicted class label together with a confidence score.
 
-**Using the trained model checkpoint:**
+Inference is architecture‑agnostic: the model architecture is encoded inside the exported file or checkpoint, so no architecture flag is required.
 
-```bash
-python -m src.inference --model-type checkpoint --model-path <path_to_trained_model_checkpoint> --image <path_to_image>
-```
-
-**Using a TorchScript model:**
+### Using a training checkpoint
+A checkpoint contains the model weights, class names, and metadata saved after training.
 
 ```bash
-python -m src.inference --model-type torchscript --model-path <path_to_torchscript_model_file> --image <path_to_image>
+python -m src.inference --model-type checkpoint --model-path results/model_checkpoint.pth --image <path_to_image>
 ```
 
-**Using a ONNX model:**
+### Using a TorchScript model
+TorchScript models are suitable for PyTorch‑based deployment environments.
 
 ```bash
-python -m src.inference --model-type onnx --model-path <path_to_onnx_model_file> --image <path_to_image>
+python -m src.inference --model-type torchscript --model-path exports/model_torchscript.pt --image <path_to_image>
 ```
 
-Note: When provided with two ONNX files (due to a larger model), the file without ```.data``` shall be considered (simply ending with ```.onnx```).
+### Using an ONNX model
+ONNX models support cross‑framework and edge‑device inference. Large models may be split into a ```.onnx``` graph file and a ```.onnx.data``` weights file; in such cases, pass the ```.onnx``` file without the ```.data``` suffix.
 
-All of those commands print the predicted class and confidence score.
+```bash
+python -m src.inference --model-type onnx --model-path exports/model_onnx.onnx --image <path_to_image>
+```
 
-## VS Code Tasks (optional)
+### What happens during inference
+The inference script:
+ - loads the selected model format (checkpoint, TorchScript, or ONNX)
+ - applies the same preprocessing transforms used during validation
+ - runs a forward pass on the input image
+ - computes the predicted class and confidence score
+ - prints the result to the console
+ - Inference always runs on CPU to ensure compatibility across environments.
 
-This project includes a set of preconfigured VS Code tasks located in ```.vscode/tasks.json```. They provide one‑click execution for training, testing, inference, and model export. Each task prompts for required inputs (e.g., model path, number of epochs) and uses the project’s virtual environment automatically. These tasks are optional and intended to streamline development; all functionality remains available through the standard CLI commands described above.
+## VS Code Tasks
+
+This project includes a set of preconfigured VS Code tasks located in ```.vscode/tasks.json```. They provide one‑click execution for training, testing, inference, and model export. Each task prompts for required inputs (e.g., model path, number of epochs) and uses the project’s virtual environment automatically. These tasks are optional and intended to streamline development; all functionality still remains available through the standard CLI commands described above.
 
 ## Results
 Training the **SimpleCNN** model for **20 epochs** produced a set of evaluation artifacts that illustrate how the model learned over time and how well it generalizes to unseen tomato leaf images. These artifacts are stored under ```results/plots/``` and include accuracy and loss curves as well as a normalized confusion matrix.
