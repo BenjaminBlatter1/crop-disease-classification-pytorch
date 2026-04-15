@@ -1,3 +1,15 @@
+<p align="left">
+  <img src="https://img.shields.io/badge/PyTorch-2.x-red?logo=pytorch" />
+  <img src="https://img.shields.io/badge/Python-3.12-blue?logo=python" />
+  <img src="https://img.shields.io/badge/License-MIT-green" />
+  <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey" />
+  <img src="https://img.shields.io/badge/Model-ONNX%20%7C%20TorchScript-orange" />
+</p>
+
+<p align="center">
+  <img src="assets/banner.png" alt="Crop Disease Classification Banner">
+</p>
+
 # Crop Disease Classification with PyTorch and Computer Vision
 
 ## Table of Contents
@@ -29,6 +41,10 @@
   - [Normalized Confusion Matrix](#normalized-confusion-matrix)
   - [Performance Summary](#performance-summary)
 - [Future Work](#future-work)
+  - [Model and Training Improvements](#model-and-training-improvements)
+  - [Deployment and Inference Enhancements](#deployment-and-inference-enhancements)
+  - [Data and Evaluation Extensions](#data-and-evaluation-extensions)
+  - [Documentation and Developer Experience](#documentation-and-developer-experience)
 - [License](#license)
 
 ## Overview
@@ -385,13 +401,31 @@ Misclassifications occur primarily between visually similar fungal diseases (e.g
 These results demonstrate that even a lightweight CNN can achieve strong performance on the tomato leaf disease dataset, though the gap between training and validation accuracy suggests that more expressive models (e.g., ResNet18, MobileNetV2) will likely yield further gains.
 
 ## Future Work
-Several improvements can further enhance model performance and robustness:
- - Transfer learning using pretrained CNN backbones
- - Hyperparameter tuning (learning rate, batch size, optimizer)
- - Larger or deeper model architectures
- - Test‑set evaluation and cross‑validation
- - Benchmarking TorchScript/ONNX inference latency on CPU/GPU
- - Quantization (FP16/INT8) for edge deployment
+The current pipeline is complete and fully functional, but several extensions can further improve performance, robustness, and deployability. These items are grouped by theme to reflect the project’s long‑term direction.
+
+### Model and Training Improvements
+- Add more pretrained backbones (MobileNetV3, EfficientNet‑B0, ConvNeXt‑Tiny) for benchmarking.
+- Perform systematic hyperparameter tuning (learning rate schedules, optimizers, batch sizes).
+- Introduce advanced augmentations tailored to agricultural imagery (CutMix, RandAugment).
+- Add pruning or knowledge distillation for lightweight edge‑deployment models.
+- Evaluate cross‑validation or a dedicated test split for more rigorous generalization metrics.
+
+### Deployment and Inference Enhancements
+- Containerize the entire pipeline with Docker for reproducible training and inference.
+- Benchmark TorchScript and ONNX Runtime latency on CPU/GPU for real‑time use cases.
+- Add optional INT8 or FP16 quantization for edge devices.
+- Provide a minimal REST API or CLI wrapper for batch inference.
+
+### Data and Evaluation Extensions
+- Add per‑class accuracy tables and error analysis to highlight difficult disease pairs.
+- Explore dataset balancing or synthetic data generation for underrepresented classes.
+- Integrate Grad‑CAM or similar methods for explainability.
+
+### Documentation and Developer Experience
+- Add a Quickstart section with the most common commands.
+- Provide a comparison table of all supported architectures and their performance.
+- Add a reproducibility checklist (dataset version, seeds, environment).
+- Expand the VS Code tasks to include Dockerized workflows once available.
 
 ## License 
 This project is released under the MIT License, a permissive open‑source license that allows reuse, modification, and distribution with minimal restrictions.
