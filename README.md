@@ -212,7 +212,7 @@ or via the command‑line interface:
 python -m src.train --train --augment yes
 ```
 
-If ```--augment``` is omitted, augmentation defaults to the value defined in Config.
+If ```--augment``` is omitted, augmentation defaults to "no".
 
 #### Transform pipeline
 The training script constructs the transform pipelines dynamically:
@@ -248,7 +248,9 @@ This generates:
 ```
 exports/model_torchscript.pt    # TorchScript model
 exports/model_onnx.onnx         # ONNX model
+exports/model_onnx.onnx.data    # ONNX model
 ```
+Note: Large ONNX models may be split into ```model_onnx.onnx``` (graph) and ```model_onnx.onnx.data``` (weights). This is normal and follows the ONNX external data format.
 
 These artifacts can be used for mobile, embedded, or real‑time inference pipelines.
 
@@ -275,6 +277,8 @@ python -m src.inference --model-type torchscript --model-path <path_to_torchscri
 ```bash
 python -m src.inference --model-type onnx --model-path <path_to_onnx_model_file> --image <path_to_image>
 ```
+
+Note: When provided with two ONNX files (due to a larger model), the file without ```.data``` shall be considered (simply ending with ```.onnx```).
 
 All of those commands print the predicted class and confidence score.
 
