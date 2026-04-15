@@ -2,6 +2,9 @@
 
 ## Table of Contents
 - [Overview](#overview)
+- [Tomato Leaf Disease Classes](#tomato-leaf-disease-classes)
+  - [Class Overview](#class-overview)
+  - [Example images](#example-images)
 - [Project Structure](#project-structure)
 - [Virtual Environment Setup](#virtual-environment-setup)
 - [Kaggle CLI Setup](#kaggle-cli-setup)
@@ -29,15 +32,47 @@
 - [License](#license)
 
 ## Overview
-This project implements a clean, minimal, and fully reproducible machine‑learning pipeline for classifying tomato leaf diseases using the PlantVillage dataset.  
-The goal is to demonstrate professional ML engineering practices: clear structure, reproducible data preparation, modular code, and step‑by‑step pipeline validation.
+This project implements a complete, production‑minded machine‑learning pipeline for classifying tomato leaf diseases using the PlantVillage dataset. It is designed to demonstrate professional ML engineering practices rather than just model training. The pipeline covers the full lifecycle from dataset preparation to deployment‑ready model export, with a strong focus on clarity, modularity, and reproducibility.
 
-The project includes:
-- A PyTorch-based training pipeline
-- Dataset preprocessing and splitting
-- A simple CNN model for classification
-- Built‑in pipeline checks to ensure the setup is correct before training
+**The project includes:**
+- A configurable PyTorch training pipeline supporting multiple architectures (SimpleCNN, ResNet‑18, and easily extendable backbones)
+- A clean dataset preparation workflow for extracting and splitting the tomato subset of PlantVillage
+- A unified model factory enabling scalable architecture selection
+- Built‑in pipeline verification tests for dataset integrity, model sanity checks, and project structure validation
+- Automatic generation of training curves and a normalized confusion matrix
+- Export to TorchScript and ONNX for deployment on diverse platforms
+- A fully architecture‑aware inference script supporting checkpoints, TorchScript, and ONNX models
+- Optional VS Code tasks for one‑click execution of training, testing, export, and inference
 
+The goal is to provide a compact but realistic example of how to structure, train, evaluate, and deploy a computer‑vision model in a way that is maintainable, reproducible, and ready for integration into real‑world systems.
+
+
+## Tomato Leaf Disease Classes
+The *PlantVillage* tomato data set that it used for this project contains ten visually distinct classes, covering both healthy leaves and a range of fungal, bacterial, viral, and pest‑related diseases The following example images illustrate the visual patterns the model learns to recognize.
+
+### Class Overview
+- **Healthy** – uniform green coloration, no lesions or discoloration  
+- **Bacterial Spot** – small dark lesions, often with yellow halos  
+- **Early Blight** – brown lesions with concentric “target‑like” rings  
+- **Late Blight** – irregular dark patches with pale or water‑soaked borders  
+- **Leaf Mold** – yellow patches on the upper surface, olive‑green mold on the underside  
+- **Septoria Leaf Spot** – many small circular spots with dark borders and light centers  
+- **Spider Mites (Two‑spotted)** – tiny white/yellow speckles, sometimes with fine webbing  
+- **Target Spot** – larger circular lesions with concentric rings  
+- **Tomato Mosaic Virus** – mottled, mosaic‑like yellow/green patterns  
+- **Tomato Yellow Leaf Curl Virus** – severe curling, stunting, and chlorosis of young leaves  
+
+### Example images
+
+The table below shows one representative image per class. Image paths assume a small curated set stored under ```images/``` in the project root.
+
+| Healthy | Bacterial Spot | Early Blight | Late Blight | Leaf Mold |
+|--------|----------------|--------------|-------------|-----------|
+| <img src="example_images/healthy.jpg" width="250"> | <img src="example_images/bacterial_spot.jpg" width="250"> | <img src="example_images/early_blight.jpg" width="250"> | <img src="example_images/late_blight.jpg" width="250"> | <img src="example_images/leaf_mold.jpg" width="250"> |
+
+| Septoria Leaf Spot | Spider Mites (Two‑spotted) | Target Spot | Tomato Mosaic Virus | Tomato Yellow Leaf Curl Virus |
+|--------------------|----------------------------|-------------|----------------------|-------------------------------|
+| <img src="example_images/septoria_leaf_spot.jpg" width="250"> | <img src="example_images/spider_mites.jpg" width="250"> | <img src="example_images/target_spot.jpg" width="250"> | <img src="example_images/mosaic_virus.jpg" width="250"> | <img src="example_images/yellow_leaf_curl_virus.jpg" width="250"> |
 ## Project Structure
 ```
 ├── data/
