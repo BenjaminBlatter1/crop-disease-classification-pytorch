@@ -1,0 +1,120 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Project Tests (Interactive)",
+            "type": "shell",
+            "command": "${workspaceFolder}/.crop-disease-venv/bin/python",
+            "args": [
+                "-m", "src.train",
+                "--test", "${input:testType}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Train Model (Interactive)",
+            "type": "shell",
+            "command": "${workspaceFolder}/.crop-disease-venv/bin/python",
+            "args": [
+                "-m", "src.train",
+                "--train",
+                "--epochs", "${input:epochs}",
+                "--augment", "${input:augment}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Export Models (Interactive)",
+            "type": "shell",
+            "command": "${workspaceFolder}/.crop-disease-venv/bin/python",
+            "args": [
+                "-m", "scripts.export_model",
+                "--checkpoint", "${input:checkpointPath}",
+                "--out-dir", "${input:exportOutDir}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run Inference (Interactive)",
+            "type": "shell",
+            "command": "${workspaceFolder}/.crop-disease-venv/bin/python",
+            "args": [
+                "-m", "src.inference",
+                "--model-type", "${input:modelType}",
+                "--model-path", "${input:modelPath}",
+                "--image", "${input:imagePath}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testType",
+            "type": "pickString",
+            "description": "Select test type",
+            "options": [
+                "all",
+                "project_structure",
+                "dataset",
+                "model"
+            ]
+        },
+        {
+            "id": "epochs",
+            "type": "promptString",
+            "description": "Number of training epochs",
+            "default": "10"
+        },
+        {
+            "id": "augment",
+            "type": "pickString",
+            "description": "Enable augmentation?",
+            "options": ["yes", "no"],
+            "default": "no"
+        },
+        {
+            "id": "checkpointPath",
+            "type": "promptString",
+            "description": "Path to the training checkpoint (.pth)",
+            "default": "results/model_checkpoint.pth"
+        },
+        {
+            "id": "exportOutDir",
+            "type": "promptString",
+            "description": "Directory where exported models will be saved",
+            "default": "exports/"
+        },
+        {
+            "id": "modelType",
+            "type": "pickString",
+            "description": "Select the model backend",
+            "options": [
+                "checkpoint",
+                "torchscript",
+                "onnx"
+            ]
+        },
+        {
+            "id": "modelPath",
+            "type": "promptString",
+            "description": "Enter the path to the model file (.pth, .pt, .onnx)"
+        },
+        {
+            "id": "imagePath",
+            "type": "promptString",
+            "description": "Enter the path to the input image"
+        }
+    ]
+}
