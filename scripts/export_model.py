@@ -33,7 +33,7 @@ def main() -> None:
     
     parser = argparse.ArgumentParser(description="Export model to deployment formats.")
     parser.add_argument("--checkpoint", required=True, help="Path to .pth checkpoint.")
-    parser.add_argument("--out_dir", required=True, help="Output directory.")
+    parser.add_argument("--out-dir", required=True, help="Output directory.")
     args = parser.parse_args()
 
     checkpoint = Path(args.checkpoint)

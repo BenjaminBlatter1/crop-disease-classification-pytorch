@@ -17,6 +17,7 @@
   - [Training Output and Logging](#training-output-and-logging)
 - [Model Export (TorchScript & ONNX)](#model-export)
 - [Single‑Image Inference](#single-image-inference)
+- [VS Code Tasks (optional)](#vs-code-tasks)
 - [Results](#results)
   - [Training and Validation Accuracy](#training-and-validation-accuracy)
   - [Training and Validation Loss](#training-and-validation-loss)
@@ -208,7 +209,7 @@ Config.use_augmentation = False
 or via the command‑line interface:
 
 ```bash
-python -m src.train --train --augment --yes
+python -m src.train --train --augment yes
 ```
 
 If ```--augment``` is omitted, augmentation defaults to the value defined in Config.
@@ -239,7 +240,7 @@ After training, the model can be exported to deployment‑ready formats. This pr
 
 Export the trained model:
 ```bash
-python -m scripts.export_model --checkpoint results/model_checkpoint.pth --out_dir exports/
+python -m scripts.export_model --checkpoint results/model_checkpoint.pth --out-dir exports/
 ```
 
 This generates:
@@ -260,22 +261,26 @@ You can run inference using either the **training checkpoint**, the **exported T
 **Using the trained model checkpoint:**
 
 ```bash
-python -m src.inference --model_type checkpoint --model_path <path_to_trained_model_checkpoint>  --image <path_to_image>
+python -m src.inference --model-type checkpoint --model-path <path_to_trained_model_checkpoint> --image <path_to_image>
 ```
 
 **Using a TorchScript model:**
 
 ```bash
-python -m src.inference --model_type torchscript --model_path <path_to_torchscript_model_file> --image <path_to_image>
+python -m src.inference --model-type torchscript --model-path <path_to_torchscript_model_file> --image <path_to_image>
 ```
 
 **Using a ONNX model:**
 
 ```bash
-python -m src.inference --model_type onnx --model_path <path_to_onnx_model_file> --image <path_to_image>
+python -m src.inference --model-type onnx --model-path <path_to_onnx_model_file> --image <path_to_image>
 ```
 
 All of those commands print the predicted class and confidence score.
+
+## VS Code Tasks (optional)
+
+This project includes a set of preconfigured VS Code tasks located in ```.vscode/tasks.json```. They provide one‑click execution for training, testing, inference, and model export. Each task prompts for required inputs (e.g., model path, number of epochs) and uses the project’s virtual environment automatically. These tasks are optional and intended to streamline development; all functionality remains available through the standard CLI commands described above.
 
 ## Results
 Training the **SimpleCNN** model for **20 epochs** produced a set of evaluation artifacts that illustrate how the model learned over time and how well it generalizes to unseen tomato leaf images. These artifacts are stored under ```results/plots/``` and include accuracy and loss curves as well as a normalized confusion matrix.

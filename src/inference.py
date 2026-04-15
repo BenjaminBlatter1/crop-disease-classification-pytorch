@@ -222,10 +222,10 @@ def main():
     Entry point for single-image inference.
 
     This function parses command-line arguments, selects the inference backend
-    specified by `--model_type` (checkpoint, torchscript, or onnx), loads the
+    specified by `--model-type` (checkpoint, torchscript, or onnx), loads the
     corresponding model or session, and prints the predicted class label and
     confidence score for the given image. TorchScript and ONNX modes require
-    `--model_path`, while checkpoint inference uses the default training
+    `--model-path`, while checkpoint inference uses the default training
     checkpoint stored in `results/model_checkpoint.pth`.
     """
 
@@ -239,7 +239,7 @@ def main():
     )
     
     parser.add_argument(
-        "--model_type",
+        "--model-type",
         type=str,
         choices=["checkpoint", "torchscript", "onnx"],
         required=True,
@@ -247,7 +247,7 @@ def main():
     )
 
     parser.add_argument(
-        "--model_path",
+        "--model-path",
         type=str,
         required=True,
         help="Path to the model file (.pth, .pt, or .onnx)."
@@ -257,13 +257,13 @@ def main():
 
     if args.model_type == "checkpoint":
         if not args.model_path:
-            raise ValueError("Trained model checkpoint inference requires --model_path.")
+            raise ValueError("Trained model checkpoint inference requires --model-path.")
         run_inference(args.image, args.model_path)
         return
 
     if args.model_type == "torchscript":
         if not args.model_path:
-            raise ValueError("TorchScript inference requires --model_path.")
+            raise ValueError("TorchScript inference requires --model-path.")
         model = load_torchscript(args.model_path)
         label, conf = predict_image(model, args.image)
         logger.info(f"Predicted class: {label} ({conf:.4f})")
@@ -271,7 +271,7 @@ def main():
 
     if args.model_type == "onnx":
         if not args.model_path:
-            raise ValueError("ONNX inference requires --model_path.")
+            raise ValueError("ONNX inference requires --model-path.")
         session = load_onnx(args.model_path)
         label, conf = predict_image_onnx(session, args.image)
         logger.info(f"Predicted class: {label} ({conf:.4f})")
