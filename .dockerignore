@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+venv_training/
+venv_inference/
+.crop-disease-venv/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# IDEs
+.vscode/
+.idea/
+
+# Data (not needed in inference container)
+data/
+results/
+exports/
+notebooks/
+
+# Large artifacts
+*.pth
+*.pt
+*.onnx
+*.onnx.data
+
+# Cache
+.cache/

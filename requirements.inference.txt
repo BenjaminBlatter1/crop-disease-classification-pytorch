@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+numpy
+Pillow
+opencv-python-headless
+onnx
+onnxscript
+scikit-learn
+pandas

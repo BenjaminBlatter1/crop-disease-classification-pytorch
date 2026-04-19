@@ -34,6 +34,10 @@
   - [Using a TorchScript model](#using-a-torchscript-model)
   - [Using an ONNX model](#using-an-onnx-model)
   - [What happens during inference](#what-happens-during-inference)
+- [Deployment & Docker Inference Server](#deployment--docker-inference-server)
+  - [Build the Docker Image](#build-the-docker-image)
+  - [Run the Inference Server (CPU mode)](#run-the-inference-server-cpu-mode)
+  - [Run with GPU Acceleration (Cloud or CI)](#run-with-gpu-acceleration-cloud-or-ci)
 - [VS Code Tasks](#vs-code-tasks)
 - [Results](#results)
   - [Training and Validation Accuracy](#training-and-validation-accuracy)
@@ -91,6 +95,7 @@ The table below shows one representative image per class. Image paths assume a s
 | <img src="example_images/septoria_leaf_spot.jpg" width="250"> | <img src="example_images/spider_mites.jpg" width="250"> | <img src="example_images/target_spot.jpg" width="250"> | <img src="example_images/mosaic_virus.jpg" width="250"> | <img src="example_images/yellow_leaf_curl_virus.jpg" width="250"> |
 ## Project Structure
 ```
+├── Dockerfile
 ├── data/
 │   ├── raw/         # Downloaded dataset
 │   └── processed/
@@ -106,6 +111,8 @@ The table below shows one representative image per class. Image paths assume a s
 │   └── split_tomato_dataset.sh # Tomato-only dataset preparation
 │
 ├── src/
+│   └── api/
+│       └── server.py
 │   ├── evaluation/
 │   │   └── confusion_matrix.py # Normalized confusion matrix generation
 │   ├── models/
@@ -119,8 +126,12 @@ The table below shows one representative image per class. Image paths assume a s
 │   ├── inference.py                         # Single-image inference script
 │   └── train.py                             # Full training pipeline + tests
 │
+├── weights/
+│   └── .gitkeep
+│
 ├── README.md
-└── requirements.txt
+├── requirements.txt
+└── requirements.inference.txt
 ```
 
 ## Virtual Environment Setup
@@ -358,6 +369,82 @@ The inference script:
  - computes the predicted class and confidence score
  - prints the result to the console
  - Inference always runs on CPU to ensure compatibility across environments.
+
+
+## Deployment & Docker Inference Server
+This project includes a **production‑minded, GPU‑ready Dockerized inference server** built with **FastAPI**.
+The goal is to provide a clean, reproducible, and deployment‑ready environment for running the trained tomato‑disease classifier in real‑world systems.
+
+**Why Docker?**
+
+Docker ensures:
+ - Reproducible inference environments
+ - Clean separation between training and deployment dependencies
+ - GPU‑accelerated inference using CUDA (when available)
+ - Easy integration into CI/CD pipelines and Kubernetes clusters
+ 
+ The Docker image uses a minimal inference‑only dependency set and installs the CUDA‑enabled PyTorch wheel inside the container.
+ 
+---
+
+### Build the Docker Image
+From the project root:
+
+```bash
+docker build -t crop-disease-api .
+```
+
+This builds a GPU‑ready image using:
+ - requirements.inference.txt
+ - src/api/server.py
+ - your exported model weights under weights/
+
+---
+
+### Run the Inference Server (CPU Mode)
+Even without a GPU, you can fully test the API locally:
+
+```bash
+docker run -p 8000:8000 crop-disease-api
+```
+
+Then open:
+```http://localhost:8000/health```
+
+You should see:
+```json
+{"status": "ok"}
+```
+
+This validates:
+ - container startup
+ - FastAPI routing
+ - model loading (CPU fallback)
+ - preprocessing & postprocessing
+ - inference pipeline (CPU)
+
+---
+
+### Run with GPU Acceleration (Cloud or CI)
+Local GPU inference may not be available on all systems (e.g., Intel GPUs on Ubuntu 24.04).
+To test CUDA inference, run the container on a GPU‑enabled environment such as:
+ - GitHub Actions GPU runners
+ - AWS EC2 (g4dn / g5 instances)
+ - RunPod
+ - Paperspace
+ - Lambda Labs
+
+Example:
+```bash
+docker run --gpus all -p 8000:8000 crop-disease-api
+```
+
+Inside the container:
+```bash
+python -c "import torch; print(torch.cuda.is_available())"
+```
+
+Expected output on GPU: ```True```
 
 ## VS Code Tasks
 
