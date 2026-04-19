@@ -38,6 +38,8 @@
   - [Build the Docker Image](#build-the-docker-image)
   - [Run the Inference Server (CPU mode)](#run-the-inference-server-cpu-mode)
   - [Run with GPU Acceleration (Cloud or CI)](#run-with-gpu-acceleration-cloud-or-ci)
+- [API Architecture Overview](#api-architecture-overview)
+  - [Key Features](#key-features)
 - [VS Code Tasks](#vs-code-tasks)
 - [Results](#results)
   - [Training and Validation Accuracy](#training-and-validation-accuracy)
@@ -112,9 +114,16 @@ The table below shows one representative image per class. Image paths assume a s
 │
 ├── src/
 │   └── api/
-│       └── server.py
+│   │   ├── server.py              # FastAPI app + startup/shutdown events
+│   │   ├── routes/
+│   │   │   ├── health.py          # /health and /ready endpoints
+│   │   │   └── predict.py
+│   │   └── dependencies/
+│   │   │   ├── config.py          # environment-driven config
+│   │   │   ├── logging.py         # logging middleware
+│   │   │   └── exceptions.py      # exception handlers
 │   ├── evaluation/
-│   │   └── confusion_matrix.py # Normalized confusion matrix generation
+│   │   └── confusion_matrix.py             # Normalized confusion matrix generation
 │   ├── models/
 │   │   ├── convolutional_neural_network.py # Simple CNN model
 │   │   ├── export.py                       # TorchScript/ONNX export utilities
@@ -445,6 +454,22 @@ python -c "import torch; print(torch.cuda.is_available())"
 ```
 
 Expected output on GPU: ```True```
+
+## API Architecture Overview
+
+The project includes a modular, production‑grade FastAPI architecture designed for scalable and maintainable model deployment.
+This API layer provides the foundation for GPU‑accelerated inference, observability, and future extensions such as batching, metrics, and CI/CD validation.
+
+### Key Features
+ - Modular folder structure under ```src/api/```
+ - Environment‑driven configuration (```config.py```)
+ - JSON logging middleware with automatic request‑ID injection
+ - Centralized exception handling for validation and server errors
+ - Dedicated system endpoints:
+   - ```/health``` — liveness probe
+   - ```/ready``` — readiness probe (model‑loading aware)
+ - Startup and shutdown lifecycle hooks for initializing and cleaning up resources
+ - Docker‑first design for reproducible inference environments
 
 ## VS Code Tasks
 

@@ -7,3 +7,5 @@ onnx
 onnxscript
 scikit-learn
 pandas
+pydantic
+pydantic-settings
