@@ -20,12 +20,12 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 WORKDIR /app
 
 # ---------------------------------------------------------
-# 4) Copy minimal inference dependencies
+# 4) Copy ONLY requirements first (enables caching)
 # ---------------------------------------------------------
 COPY requirements.inference.txt .
 
 # ---------------------------------------------------------
-# 5) Install Python dependencies (except PyTorch)
+# 5) Install Python dependencies (cached unless requirements change)
 # ---------------------------------------------------------
 RUN pip install --no-cache-dir -r requirements.inference.txt
 
@@ -38,7 +38,6 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
 # 7) Copy the project into the container
 # ---------------------------------------------------------
 COPY src/ /app/src/
-COPY src/api/server.py /app/src/api/server.py
 COPY weights/ /app/weights/
 
 # ---------------------------------------------------------

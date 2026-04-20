@@ -17,14 +17,10 @@ from .dependencies.config import get_settings, Settings
 from .dependencies.logging import setup_logging, RequestIdMiddleware
 from .dependencies import exceptions as exc_handlers
 from .routes import health as health_routes
+from .routes import predict as predict_routes
 
-from .services.model_loader import load_model, InferenceModel
+from .services.model_loader import load_model
 from .services.preprocessing import get_preprocess_function
-
-# Global references populated during lifespan startup
-MODEL: InferenceModel | None = None
-PREPROCESS = None
-CLASS_NAMES: list[str] | None = None
 
 settings: Settings = get_settings()
 
@@ -33,26 +29,30 @@ async def lifespan(app: FastAPI):
     """
     Lifespan context manager for FastAPI.
 
-    This replaces the deprecated @app.on_event("startup") and
-    @app.on_event("shutdown") decorators.
-
     Startup:
         - Load model
         - Initialize preprocessing
+        - Store components in app.state
         - Mark readiness probe as ready
 
     Shutdown:
         - Reserved for future cleanup tasks
     """
-    global MODEL, PREPROCESS, CLASS_NAMES
 
     # --- Startup ---
-    MODEL = load_model(settings)
-    PREPROCESS = get_preprocess_function()
+    model = load_model(settings)
+    preprocess = get_preprocess_function()
+
+    app.state.MODEL = model
+    app.state.PREPROCESS = preprocess
 
     # Extract class names if available (checkpoint models)
-    if hasattr(MODEL.model, "class_names"):
-        CLASS_NAMES = MODEL.model.class_names
+    if hasattr(model.model, "class_names"):
+        app.state.CLASS_NAMES = model.model.class_names
+    else:
+        app.state.CLASS_NAMES = None
+        
+    print("Loaded class names:", app.state.CLASS_NAMES)
 
     # Mark API as ready
     from .routes.health import READY_STATE
@@ -82,3 +82,4 @@ app.add_exception_handler(Exception, exc_handlers.generic_exception_handler)
 
 # --- Routers ---
 app.include_router(health_routes.router, tags=["system"])
+app.include_router(predict_routes.router, tags=["inference"])

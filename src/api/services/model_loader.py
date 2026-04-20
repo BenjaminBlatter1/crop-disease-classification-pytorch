@@ -96,7 +96,7 @@ def load_model(settings: Settings) -> InferenceModel:
 
     # --- Load checkpoint ---
     if suffix == ".pth":
-        checkpoint = torch.load(model_path, map_location=device)
+        checkpoint = torch.load(model_path, map_location=device, weights_only=True)
 
         model = create_model(
             checkpoint["model_architecture"],
