@@ -4,6 +4,7 @@ numpy
 Pillow
 opencv-python-headless
 onnx
+onnxruntime
 onnxscript
 scikit-learn
 pandas

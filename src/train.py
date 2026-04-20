@@ -231,7 +231,7 @@ def test_model() -> bool:
 
     logger.info(f"Using {num_classes} classes.")
 
-    # Initialize your CNN
+    # Initialize the CNN
     model = SimpleCNN(num_classes)
 
     logger.info(f"Model architecture: {model}")

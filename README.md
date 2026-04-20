@@ -114,14 +114,18 @@ The table below shows one representative image per class. Image paths assume a s
 │
 ├── src/
 │   └── api/
-│   │   ├── server.py              # FastAPI app + startup/shutdown events
-│   │   ├── routes/
-│   │   │   ├── health.py          # /health and /ready endpoints
-│   │   │   └── predict.py
-│   │   └── dependencies/
+│   │   ├── dependencies/
 │   │   │   ├── config.py          # environment-driven config
 │   │   │   ├── logging.py         # logging middleware
 │   │   │   └── exceptions.py      # exception handlers
+│   │   ├── routes/
+│   │   │   ├── health.py          # /health and /ready endpoints
+│   │   │   └── predict.py
+│   │   ├── services/
+│   │   │   ├── model_loader.py
+│   │   │   ├── preprocessing.py
+│   │   │   └── postprocessing.py
+│   │   └── server.py              # FastAPI app + startup/shutdown events
 │   ├── evaluation/
 │   │   └── confusion_matrix.py             # Normalized confusion matrix generation
 │   ├── models/
@@ -175,7 +179,7 @@ The current Kaggle CLI still requires the legacy authentication method.
    ```bash
    kaggle datasets list -s plant
    ```
-If you see dataset results, authentication is working.
+If dataset results are shown, authentication is working.
 
 ## Download the PlantVillage Dataset
 Inside the project root:
@@ -215,7 +219,7 @@ chmod +x scripts/split_tomato_dataset.sh
 ./scripts/split_tomato_dataset.sh
 ```
 
-After running, you should have:
+Running the script should result in newly created class folders:
 
 ```
 data/processed/train/<class>/
@@ -406,12 +410,12 @@ docker build -t crop-disease-api .
 This builds a GPU‑ready image using:
  - requirements.inference.txt
  - src/api/server.py
- - your exported model weights under weights/
+ - exported model weights under weights/
 
 ---
 
 ### Run the Inference Server (CPU Mode)
-Even without a GPU, you can fully test the API locally:
+Even without a GPU, the API can be fully tested locally:
 
 ```bash
 docker run -p 8000:8000 crop-disease-api
@@ -420,7 +424,7 @@ docker run -p 8000:8000 crop-disease-api
 Then open:
 ```http://localhost:8000/health```
 
-You should see:
+should result in:
 ```json
 {"status": "ok"}
 ```

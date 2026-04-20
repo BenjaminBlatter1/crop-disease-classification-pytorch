@@ -35,7 +35,7 @@ RUN pip install --no-cache-dir -r requirements.inference.txt
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
 # ---------------------------------------------------------
-# 7) Copy your project into the container
+# 7) Copy the project into the container
 # ---------------------------------------------------------
 COPY src/ /app/src/
 COPY src/api/server.py /app/src/api/server.py
