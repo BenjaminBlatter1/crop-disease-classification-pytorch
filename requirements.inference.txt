@@ -10,3 +10,9 @@ scikit-learn
 pandas
 pydantic
 pydantic-settings
+httpx
+python-multipart
+prometheus-client
+python-json-logger
+starlette
+typing-extensions
